@@ -1,5 +1,7 @@
 use std::{fs::File, io::BufReader, io::BufRead};
 
+use regex::Regex;
+
 fn parse_netlist_file(file_path: String) {
 
     let input = File::open(&file_path).unwrap_or_else(|error| {
@@ -17,17 +19,35 @@ fn parse_netlist_file(file_path: String) {
 	if name_id.len() < 2 {
 	    panic!("Parse error: invalid name_id {}", name_id);
 	}
-	let name = name_id.chars().nth(0).unwrap();
+	let re = Regex::new(r"[a-z]+").unwrap();
+	let mat = re.find(&name_id)
+	    .expect("Parse error: expected characters at start of {name_id}");
+	let name: String = name_id
+	    .chars()
+	    .take(mat.end())
+	    .collect();
 	let id: String = name_id
 	    .chars()
-	    .skip(1)
+	    .skip(mat.end())
 	    .collect();
 	let id: usize = id.parse()
 	    .unwrap_or_else(|error| {
 		panic!("Failed to parse ID {id} as unsigned integer ({error})")
 	    });
 	println!("Found name {name} and id {id}");
-	
+	match name.as_str() {
+	    "v" => println!("Voltage"),
+	    "i" => println!("Current"),
+	    "r" => println!("Resistor"),
+	    "c" => println!("Capacitor"),
+	    "l" => println!("Inductor"),
+	    "d" => println!("Diode"),
+	    "qn" => println!("NPN"),
+	    "qp" => println!("PNP"),
+	    "mn" => println!("NMOS"),
+	    "mp" => println!("PMOS"),
+	    &_ => panic!("Found unexpected name {name}"),
+	}
 	
 	for token in tokens {
 	    println!("T: {token}");
