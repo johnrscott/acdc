@@ -10,14 +10,14 @@ fn main() {
     let file_path = args[1].to_string();
 
     let input = File::open(&file_path).unwrap_or_else(|error| {
-	println!("Could not open file {file_path} ({})", error.kind());
-        std::process::exit(1);	    
+	panic!("Could not open file {file_path} ({})", error.kind());
     });
 
     let buffered = BufReader::new(input);
     
-    for line in buffered.lines() {
-	println!("{}", line.unwrap());
+    for line in buffered.lines().map(|ln| ln.unwrap()) {
+	println!("{line}");
+	
     }
 
     
