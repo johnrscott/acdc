@@ -1,8 +1,54 @@
-use std::{fs::File, io::BufReader, io::BufRead};
+use std::{fs::File, io::BufReader, io::{BufRead, Lines}, str::FromStr};
 
 use regex::Regex;
 
-fn parse_name_id(token: String) -> (String, usize) {
+#[derive(Debug)]
+enum Component {
+    VoltageSource { term_pos: usize, term_neg: usize, voltage: f64 },
+    CurrentSource,
+    Resistor,
+    Capacitor,
+    Inductor,
+    Diode,
+    BjtNpn,
+    BjtPnp,
+    NMos,
+    PMos,
+}
+
+impl Component {
+    fn new_voltage_source(tokens: Vec<&str>) -> Self {
+	if tokens.len() != 3 {
+	    panic!("Expected three tokens for VoltageSource")
+	}
+	let term_pos = tokens[0].parse().expect("Failed to parse positive terminal");
+	let term_neg = tokens[1].parse().expect("Failed to parse negative terminal");
+	let voltage = tokens[2].parse().expect("Failed to parse voltage value");
+	Self::VoltageSource {
+	    term_pos,
+	    term_neg,
+	    voltage,
+	}
+    }
+    
+    fn new(name: &str, tokens: Vec<&str>) -> Self {
+	match name {
+	    "v" => Self::new_voltage_source(tokens),
+	    "i" => Self::CurrentSource,
+	    "r" => Self::Resistor,
+	    "c" => Self::Capacitor,
+	    "l" => Self::Inductor,
+	    "d" => Self::Diode,
+	    "qn" => Self::BjtNpn,
+	    "qp" => Self::BjtPnp,
+	    "mn" => Self::NMos,
+	    "mp" => Self::PMos,
+	    &_ => panic!("Found unexpected name {name}"),
+	}
+    }
+}
+
+fn parse_name_id(token: &str) -> (String, usize) {
     let name_id = token.to_ascii_lowercase();
     if name_id.len() < 2 {
 	panic!("Parse error: invalid name_id {}", name_id);
@@ -23,6 +69,7 @@ fn parse_name_id(token: String) -> (String, usize) {
 	    panic!("Failed to parse ID {id} as unsigned integer ({error})")
 	});
     println!("Found name {name} and id {id}");
+    
     (name, id)
 }
 
@@ -45,27 +92,15 @@ fn parse_netlist_file(file_path: String) {
 	    _ => {},
 	}
 
-	let mut tokens = line.split_ascii_whitespace();
+	let mut tokens = line.split_whitespace();
+
 	// Get the component name and ID
 	let name_id = tokens.next().unwrap();
 	let (name, id) = parse_name_id(name_id);
-	match name.as_str() {
-	    "v" => println!("Voltage"),
-	    "i" => println!("Current"),
-	    "r" => println!("Resistor"),
-	    "c" => println!("Capacitor"),
-	    "l" => println!("Inductor"),
-	    "d" => println!("Diode"),
-	    "qn" => println!("NPN"),
-	    "qp" => println!("PNP"),
-	    "mn" => println!("NMOS"),
-	    "mp" => println!("PMOS"),
-	    &_ => panic!("Found unexpected name {name}"),
-	}
+
+	let component = Component::new(&name, tokens.collect());
+	println!("{:?}", component);
 	
-	for token in tokens {
-	    println!("T: {token}");
-	}	
     }
 }
 
