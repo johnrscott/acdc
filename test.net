@@ -1,8 +1,13 @@
+# Sources
 V0 1 2 30
 I20 1 2 30
+
+# RLC
 R02 1 2 -3
 C3 2 4 1u
 L30 2 4 100n
+
+# Semiconductor
 D1 2 4 0.2
 QN30 2 4 2 2.3
 QP000 2 4 2 2.3

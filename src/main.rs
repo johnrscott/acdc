@@ -11,6 +11,16 @@ fn parse_netlist_file(file_path: String) {
     let buffered = BufReader::new(input);
     
     for line in buffered.lines().map(|ln| ln.unwrap()) {
+
+	if line.len() == 0 {
+ 	    continue
+	}
+	
+	match line.chars().nth(0).unwrap() {
+	    '#' => continue,
+	    _ => {},
+	}
+
 	let mut tokens = line.split_ascii_whitespace();
 	// Get the component name and ID
 	let name_id = tokens.next()
@@ -51,8 +61,7 @@ fn parse_netlist_file(file_path: String) {
 	
 	for token in tokens {
 	    println!("T: {token}");
-	}
-	
+	}	
     }
 }
 
