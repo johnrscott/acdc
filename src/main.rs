@@ -9,8 +9,10 @@ fn main() {
     }
     let file_path = args[1].to_string();
 
-    let input = File::open(file_path)
-	.expect("Failed to open file");
+    let input = File::open(&file_path).unwrap_or_else(|error| {
+	println!("Could not open file {file_path} ({})", error.kind());
+        std::process::exit(1);	    
+    });
 
     let buffered = BufReader::new(input);
     
