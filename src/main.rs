@@ -6,6 +6,7 @@ use crate::component::Component;
 
 mod component;
 mod sparse;
+mod circuit;
 
 fn parse_name_id(token: &str) -> (String, usize) {
     let name_id = token.to_ascii_lowercase();
