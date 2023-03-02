@@ -9,19 +9,18 @@ use crate::sparse::{SparseMatrix, ColumnVector,
 use crate::circuit::index_map::IndexMap;
 use crate::circuit::instance::Instance;
 
-#[allow(non_snake_case)]
-struct MnaMatrix {
-    A1Y11A1t: SparseMatrix,
-    A2: SparseMatrix,
-    Z22: SparseMatrix,
+struct MnaMatrix<P: ValueType<P>> {
+    a1_y11_a1t: SparseMatrix<P>,
+    a2: SparseMatrix<P>,
+    z22: SparseMatrix<P>,
 }
 
 impl MnaMatrix {
     pub fn new() -> Self {
 	Self {
-	    A1Y11A1t: SparseMatrix::new(),
-	    A2: SparseMatrix::new(),
-	    Z22: SparseMatrix::new(),
+	    a1_y11_a1t: SparseMatrix::new(),
+	    a2: SparseMatrix::new(),
+	    z22: SparseMatrix::new(),
 	}
     }
     pub fn get_matrix(self) -> SparseMatrix {
@@ -30,16 +29,16 @@ impl MnaMatrix {
 	concat_vertical(top, &bottom)
     }
     pub fn insert_group1(&self, row: usize, col: usize, value: f64) {
-	self.A1Y11A1t.insert(row, col, value);
+	self.a1_y11_A1t.set_value(row, col, value);
     }
     pub fn insert_group2(&self, row: usize, col: usize, value: f64) {
-	self.A1Y11A1t.insert(row, col, value);
+	self.a1_y11_a1t.set_value(row, col, value);
     }
 }
 
 struct MnaRhs {
-    top: ColumnVector,
-    bottom: ColumnVector,
+    top: Vec<P>,
+    bottom: Vec<P>,
 }
 
 impl MnaRhs {
@@ -49,7 +48,7 @@ impl MnaRhs {
 	    bottom: ColumnVector::new(),
 	}
     }
-    pub fn get_vector(mut self) -> ColumnVector {
+    pub fn get_vector(mut self) -> Vec<P> {
 	self.top.append(self.bottom);
 	self.top
     }

@@ -1,4 +1,4 @@
-use csuperlu::{sparse_matrix::SparseMatrix, c::value_type::ValueType};
+use csuperlu::{sparse_matrix::SparseMatrix, c::{value_type::ValueType, options::ColumnPermPolicy, stat::CSuperluStat}, dense::DenseMatrix, simple_driver::{SimpleSystem, self}};
 
 pub fn transpose<P: ValueType<P>>(mut a: SparseMatrix<P>) -> SparseMatrix<P> {
     // This does not modify in place yet -- todo
@@ -40,4 +40,20 @@ fn neg<P: ValueType<P>>(mat: SparseMatrix<P>) -> SparseMatrix<P> {
 	new_mat.set_value(*row, *col, *value);
     }
     new_mat
+}
+
+fn solve<P: ValueType<P>>(a: SparseMatrix<P>, b: Vec<P>) -> Vec<P> {
+    if a.num_rows() != b.len() {
+	panic!("Cannot solve system; incompatible dimensions");
+    }
+    let a = a.compressed_column_format();
+    let b = DenseMatrix::from_vectors(b.len(), 1, b);
+    let system = SimpleSystem {
+	a,
+	b,
+    };
+    let mut stat = CSuperluStat::new();
+    let mut solution = system.solve(&mut stat, ColumnPermPolicy::ColAMD)
+	.expect("Failed to solve system");
+    solution.x.column_major_values().to_vec()
 }
