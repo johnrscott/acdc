@@ -34,7 +34,7 @@ pub fn concat_vertical<P: ValueType<P>>(mut a: SparseMatrix<P>, b: &SparseMatrix
     a
 }
 
-fn neg<P: ValueType<P>>(mat: SparseMatrix<P>) -> SparseMatrix<P> {
+pub fn neg<P: ValueType<P>>(mat: SparseMatrix<P>) -> SparseMatrix<P> {
     let mut new_mat = SparseMatrix::<P>::new(mat.num_rows(), mat.num_cols());
     for ((row, col), value) in mat.values().iter() {
 	new_mat.set_value(*row, *col, *value);
@@ -42,7 +42,7 @@ fn neg<P: ValueType<P>>(mat: SparseMatrix<P>) -> SparseMatrix<P> {
     new_mat
 }
 
-fn solve<P: ValueType<P>>(a: SparseMatrix<P>, b: Vec<P>) -> Vec<P> {
+pub fn solve<P: ValueType<P>>(a: SparseMatrix<P>, b: Vec<P>) -> Vec<P> {
     if a.num_rows() != b.len() {
 	panic!("Cannot solve system; incompatible dimensions");
     }

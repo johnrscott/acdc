@@ -1,9 +1,15 @@
 use csuperlu::c::value_type::ValueType;
 use csuperlu::sparse_matrix::SparseMatrix;
 
-use crate::sparse::{concat_horizontal, concat_vertical,
-		    transpose};
-use crate::circuit::instance::Instance;
+use crate::{sparse::{concat_horizontal, concat_vertical,
+		    transpose, neg}, component::Component};
+
+struct Instance {
+    /// The ID of the component in the netlist (e.g. R4)
+    pub name: String,
+    /// The component enum
+    pub component: Component,
+}
 
 /// Matrix for modified nodal analysis
 ///
@@ -46,15 +52,9 @@ impl<P: ValueType<P>> MnaMatrix<P> {
 	}
     }
     pub fn get_matrix(self) -> SparseMatrix<P> {
-	let top = concat_horizontal(self.A1Y11A1t, &self.A2);
-	let bottom = concat_horizontal(-transpose(self.A2), &self.Z22);
+	let top = concat_horizontal(self.a1_y11_a1t, &self.a2);
+	let bottom = concat_horizontal(neg(transpose(self.a2)), &self.z22);
 	concat_vertical(top, &bottom)
-    }
-    pub fn insert_group1(&self, row: usize, col: usize, value: f64) {
-	self.a1_y11_a1t.set_value(row, col, value);
-    }
-    pub fn insert_group2(&self, row: usize, col: usize, value: f64) {
-	self.a1_y11_a1t.set_value(row, col, value);
     }
 }
 
@@ -66,8 +66,8 @@ impl<P: ValueType<P>> MnaRhs<P> {
 	}
     }
     pub fn get_vector(mut self) -> Vec<P> {
-	self.top.append(self.bottom);
-	self.top
+	self.minus_a1_s1.append(&mut self.s2);
+	self.minus_a1_s1
     }
 }
 
