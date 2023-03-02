@@ -5,6 +5,7 @@ use regex::Regex;
 use crate::component::Component;
 
 mod component;
+mod sparse;
 
 fn parse_name_id(token: &str) -> (String, usize) {
     let name_id = token.to_ascii_lowercase();
@@ -70,6 +71,8 @@ fn parse_netlist_file(file_path: String) {
 	
 	let component = Component::new(&name, other_tokens, group2);
 	println!("{:?}", component);
+
+	// Add element stamps
 	
     }
 }

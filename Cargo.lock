@@ -132,7 +132,7 @@ dependencies = [
 [[package]]
 name = "csuperlu"
 version = "0.1.0"
-source = "git+https://github.com/johnrscott/csuperlu#21d98df11e6faf5d07e9d416b965e7a17e91e8ac"
+source = "git+https://github.com/lanamineh/csuperlu#a61a84407f1613894323eda0c35477f7a7aeafed"
 dependencies = [
  "csuperlu_sys",
  "itertools",
@@ -143,7 +143,7 @@ dependencies = [
 [[package]]
 name = "csuperlu_sys"
 version = "0.1.0"
-source = "git+https://github.com/johnrscott/csuperlu_sys#53f974182d0835d6a9f9496389694d6de025ef6a"
+source = "git+https://github.com/johnrscott/csuperlu_sys#e474fdc5b38a74ea8069b5acb9d0acc039fd54f2"
 dependencies = [
  "bindgen",
  "cmake",
