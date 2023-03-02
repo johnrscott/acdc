@@ -9,10 +9,35 @@ use crate::sparse::{SparseMatrix, ColumnVector,
 use crate::circuit::index_map::IndexMap;
 use crate::circuit::instance::Instance;
 
+/// Matrix for modified nodal analysis
+///
+/// Stores the modified nodal analysis matrix
+/// for a resistive network with no controlled,
+/// sources, where group 2 contains no current
+/// sources.
+///
+///  | A1 Y11 A1^T     A2  |
+///  |                     |
+///  |   - A2         Z22  |
+/// 
+///
 struct MnaMatrix<P: ValueType<P>> {
     a1_y11_a1t: SparseMatrix<P>,
     a2: SparseMatrix<P>,
     z22: SparseMatrix<P>,
+}
+
+/// Modified nodal analysis right-hand side
+///
+/// The right-hand side for modified nodal analysis is
+///
+/// | -A1 s1 |
+/// |        |
+/// |   s2   |
+///
+struct MnaRhs {
+    minus_a1_s1: Vec<P>,
+    s2: Vec<P>,
 }
 
 impl MnaMatrix {
@@ -34,11 +59,6 @@ impl MnaMatrix {
     pub fn insert_group2(&self, row: usize, col: usize, value: f64) {
 	self.a1_y11_a1t.set_value(row, col, value);
     }
-}
-
-struct MnaRhs {
-    top: Vec<P>,
-    bottom: Vec<P>,
 }
 
 impl MnaRhs {
