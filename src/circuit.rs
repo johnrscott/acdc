@@ -2,14 +2,7 @@ use csuperlu::c::value_type::ValueType;
 use csuperlu::sparse_matrix::SparseMatrix;
 
 use crate::{sparse::{concat_horizontal, concat_vertical,
-		    transpose, neg}, component::Component};
-
-struct Instance {
-    /// The ID of the component in the netlist (e.g. R4)
-    pub name: String,
-    /// The component enum
-    pub component: Component,
-}
+		    transpose, neg, solve}, component::Component};
 
 /// Matrix for modified nodal analysis
 ///
@@ -71,18 +64,6 @@ impl<P: ValueType<P>> MnaRhs<P> {
     }
 }
 
-pub struct Circuit<P: ValueType<P>> {
-    instances: Vec<Instance>,
-    mna_matrix: MnaMatrix<P>,
-    mna_rhs: MnaRhs<P>,
-}
-
-impl<P: ValueType<P>> Circuit<P> {
-   pub fn new() -> Self {
-	Self {
-	    instances: Vec::new(),
-	    mna_matrix: MnaMatrix::new(),
-	    mna_rhs: MnaRhs::new(),
-	}
-    }
+fn solve_mna<P: ValueType<P>>(matrix: MnaMatrix<P>, rhs: MnaRhs<P>) -> Vec<P> { 
+    solve(matrix.get_matrix(), rhs.get_vector())
 }
