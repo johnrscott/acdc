@@ -2,11 +2,11 @@ use std::{fs::File, io::BufReader, io::BufRead};
 
 use regex::Regex;
 
-use crate::component::Component;
+use crate::{component::Component, mna::Mna};
 
 mod component;
 mod sparse;
-mod circuit;
+mod mna;
 
 fn parse_name_id(token: &str) -> (String, usize) {
     let name_id = token.to_ascii_lowercase();
@@ -40,6 +40,8 @@ fn parse_netlist_file(file_path: String) {
     });
 
     let buffered = BufReader::new(input);
+
+    let mut mna = Mna::<f64>::new();
     
     for line in buffered.lines().map(|ln| ln.unwrap()) {
 
@@ -73,7 +75,8 @@ fn parse_netlist_file(file_path: String) {
 	let component = Component::new(&name, other_tokens, group2);
 	println!("{:?}", component);
 
-	// Add element stamps
+	
+	mna.add_element_stamp(component);
 	
     }
 }

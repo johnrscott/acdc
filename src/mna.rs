@@ -16,7 +16,7 @@ use crate::{sparse::{concat_horizontal, concat_vertical,
 ///  |   - A2         Z22  |
 /// 
 ///
-struct MnaMatrix<P: ValueType<P>> {
+pub struct MnaMatrix<P: ValueType<P>> {
     a1_y11_a1t: SparseMatrix<P>,
     a2: SparseMatrix<P>,
     z22: SparseMatrix<P>,
@@ -30,9 +30,25 @@ struct MnaMatrix<P: ValueType<P>> {
 /// |        |
 /// |   s2   |
 ///
-struct MnaRhs<P: ValueType<P>> {
+pub struct MnaRhs<P: ValueType<P>> {
     minus_a1_s1: Vec<P>,
     s2: Vec<P>,
+}
+
+pub struct Mna<P: ValueType<P>> {
+    matrix: MnaMatrix<P>,
+    rhs: MnaRhs<P>,
+}
+
+impl<P: ValueType<P>> Mna<P> {
+    pub fn new() -> Self {
+	Self {
+	    matrix: MnaMatrix::new(),
+	    rhs: MnaRhs::new(),
+	}
+    }
+    pub fn add_element_stamp(&mut self, component: Component) {
+    }
 }
 
 impl<P: ValueType<P>> MnaMatrix<P> {
