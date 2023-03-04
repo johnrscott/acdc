@@ -102,6 +102,8 @@ fn main() {
 
     let (mut instances, mut mna) = parse_netlist_file(file_path);
 
+    println!("{}", mna);
+    
     let num_nodes = mna.num_nodes();
 	
     let (matrix, rhs) = mna.get_system();
