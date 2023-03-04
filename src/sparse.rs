@@ -11,20 +11,30 @@ pub fn transpose(mut a: SparseMatrix<f64>) -> SparseMatrix<f64> {
     transposed
 }
 
-// Assumes that the two matrices use the same row indices, even if heights disagree. The
-// smaller matrix is assumed to have zero rows up to the size of the larger matrix.
-pub fn concat_horizontal(mut a: SparseMatrix<f64>, b: &SparseMatrix<f64>) -> SparseMatrix<f64> {
-    let num_cols_a = a.num_cols();
+/// Assumes that the two matrices use the same row indices, even if heights disagree. The
+/// smaller matrix is assumed to have zero rows up to the size of the larger matrix. The
+/// matrices are concatenated with horizontal padding, which adds h_pad all-zero columns between
+/// a and b  
+pub fn concat_horizontal(
+    mut a: SparseMatrix<f64>,
+    b: &SparseMatrix<f64>,
+    h_pad: usize
+) -> SparseMatrix<f64> {
+    let offset = a.num_cols() + h_pad;
     for ((row, col), value) in b.values().iter() {
-	a.set_value(*row, num_cols_a + *col, *value);
+	a.set_value(*row, offset + *col, *value);
     }
     a
 }
 
-pub fn concat_vertical(mut a: SparseMatrix<f64>, b: &SparseMatrix<f64>) -> SparseMatrix<f64> {
-    let num_rows_a = a.num_rows();
+pub fn concat_vertical(
+    mut a: SparseMatrix<f64>,
+    b: &SparseMatrix<f64>,
+    v_pad: usize,
+) -> SparseMatrix<f64> {
+    let offset = a.num_rows() + v_pad;
     for ((row, col), value) in b.values().iter() {
-	a.set_value(num_rows_a + *row, *col, *value);
+	a.set_value(offset + *row, *col, *value);
     }
     a
 }

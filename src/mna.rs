@@ -33,7 +33,6 @@ impl MnaMatrix {
 	Self {
 	    top_dim: 0,
 	    bottom_dim: 0,
-	    // Insert some placeholder size here
 	    top_left: SparseMatrix::new(),
 	    top_right: SparseMatrix::new(),
 	    bottom_left: SparseMatrix::new(),
@@ -50,11 +49,9 @@ impl MnaMatrix {
     }
     
     pub fn get_matrix(self) -> SparseMatrix<f64> {
-
-	// Make the top row agree on the number of rows
-	let top = concat_horizontal(self.top_left, &self.top_right);
-	let bottom = concat_horizontal(self.bottom_left, &self.bottom_right);
-	concat_vertical(top, &bottom)
+	let top = concat_horizontal(self.top_left, &self.top_right, self.bottom_dim);
+	let bottom = concat_horizontal(self.bottom_left, &self.bottom_right, self.bottom_dim);
+	concat_vertical(top, &bottom, self.top_dim)
     }
 
     /// Add a block of symmetric values to the top-left matrix.
@@ -169,8 +166,9 @@ impl Mna {
 
     /// Return (matrix, rhs)
     pub fn get_system(self) -> (SparseMatrix<f64>, Vec<f64>) {
+	let top_dim = self.matrix.top_dim();
 	let matrix = self.matrix.get_matrix();
-	let rhs = self.rhs.get_vector();
+	let rhs = self.rhs.get_vector(top_dim);
 	(matrix, rhs)
     }
 
@@ -213,8 +211,8 @@ impl MnaRhs {
 	    bottom: SparseMatrix::new(),
 	}
     }
-    pub fn get_vector(mut self) -> Vec<f64> {
-	let v = concat_vertical(self.top, &self.bottom);
+    pub fn get_vector(mut self, top_dim: usize) -> Vec<f64> {
+	let v = concat_vertical(self.top, &self.bottom, top_dim);
 	let mut out = Vec::new();
 	for row in  0..v.num_rows() {
 	    out.push(v.get_value(row, 0));
@@ -230,5 +228,6 @@ impl MnaRhs {
 }
 
 fn solve_mna(matrix: MnaMatrix, rhs: MnaRhs) -> Vec<f64> { 
-    solve(matrix.get_matrix(), rhs.get_vector())
+    let top_dim = matrix.top_dim();
+    solve(matrix.get_matrix(), rhs.get_vector(top_dim))
 }
