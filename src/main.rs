@@ -73,8 +73,7 @@ fn parse_netlist_file(file_path: String) {
     }
 
     println!("{mna}");
-
-
+    
     let (matrix, rhs) = mna.get_system();
     println!("MNA Matrix:\n {matrix}");
     println!("MNA RHS:\n {:?}", rhs);

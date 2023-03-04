@@ -49,9 +49,11 @@ impl MnaMatrix {
     }
     
     pub fn get_matrix(self) -> SparseMatrix<f64> {
-	let top = concat_horizontal(self.top_left, &self.top_right, self.bottom_dim);
-	let bottom = concat_horizontal(self.bottom_left, &self.bottom_right, self.bottom_dim);
-	concat_vertical(top, &bottom, self.top_dim)
+	//let h_pad = self.top_dim - self.top_left.num_cols();
+	//let v_pad = self.bottom_dim - self.top_left.num_cols();
+	let top = concat_horizontal(self.top_left, &self.top_right, 0);
+	let bottom = concat_horizontal(self.bottom_left, &self.bottom_right, 0);
+	concat_vertical(top, &bottom, 0)
     }
 
     /// Add a block of symmetric values to the top-left matrix.
@@ -124,6 +126,55 @@ pub struct MnaRhs {
     bottom: SparseMatrix<f64>,
 }
 
+/// Assumes the matrix is square
+fn plus_equals(mat: &mut SparseMatrix<f64>, row: usize, col: usize, val: f64) {
+    let old_val = if (row < mat.num_rows()) && (col < mat.num_cols()) {
+	mat.get_value(row, col)
+    } else {
+	0.0
+    };
+    mat.set_value(row, col, old_val + val);
+}
+
+impl fmt::Display for MnaMatrix {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+	writeln!(f, "Top dim = {}, bottom dim = {}", self.top_dim, self.bottom_dim)?;
+	writeln!(f, "Top left:")?;
+	writeln!(f, "{}", self.top_left)?;
+	writeln!(f, "Top right:")?;
+	writeln!(f, "{}", self.top_right)?;
+	writeln!(f, "Bottom left:")?;
+	writeln!(f, "{}", self.bottom_left)?;
+	writeln!(f, "Bottom right:")?;
+	writeln!(f, "{}", self.bottom_right)
+    }
+}
+
+impl MnaRhs {
+    fn new() -> Self {
+	Self {
+	    top: SparseMatrix::new(),
+	    bottom: SparseMatrix::new(),
+	}
+    }
+    
+    pub fn get_vector(self, top_dim: usize, bottom_dim: usize) -> Vec<f64> {
+	let mut out = vec![0.0; top_dim + bottom_dim];
+	for ((row, _), value) in self.top.values().iter() {
+	    out[*row] = *value;
+	}
+	for ((row, _), value) in self.bottom.values().iter() {
+	    out[top_dim + *row] = *value;
+	}
+	out
+    }
+
+    /// Add a RHS element in the group 2 matrix
+    pub fn add_rhs_stamp(&mut self, e: usize, x: f64) {
+	self.bottom.set_value(e, 1, x);
+    }
+}
+
 pub struct Mna {
     matrix: MnaMatrix,
     rhs: MnaRhs,
@@ -178,54 +229,5 @@ impl fmt::Display for Mna {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 	writeln!(f, "MNA matrix:")?;
 	writeln!(f, "{}", self.matrix)
-    }
-}
-
-/// Assumes the matrix is square
-fn plus_equals(mat: &mut SparseMatrix<f64>, row: usize, col: usize, val: f64) {
-    let old_val = if (row < mat.num_rows()) && (col < mat.num_cols()) {
-	mat.get_value(row, col)
-    } else {
-	0.0
-    };
-    mat.set_value(row, col, old_val + val);
-}
-
-impl fmt::Display for MnaMatrix {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-	writeln!(f, "Top dim = {}, bottom dim = {}", self.top_dim, self.bottom_dim)?;
-	writeln!(f, "Top left:")?;
-	writeln!(f, "{}", self.top_left)?;
-	writeln!(f, "Top right:")?;
-	writeln!(f, "{}", self.top_right)?;
-	writeln!(f, "Bottom left:")?;
-	writeln!(f, "{}", self.bottom_left)?;
-	writeln!(f, "Bottom right:")?;
-	writeln!(f, "{}", self.bottom_right)
-    }
-}
-
-impl MnaRhs {
-    fn new() -> Self {
-	Self {
-	    top: SparseMatrix::new(),
-	    bottom: SparseMatrix::new(),
-	}
-    }
-    
-    pub fn get_vector(self, top_dim: usize, bottom_dim: usize) -> Vec<f64> {
-	let mut out = vec![0.0; top_dim + bottom_dim];
-	for ((row, _), value) in self.top.values().iter() {
-	    out[*row] = *value;
-	}
-	for ((row, _), value) in self.bottom.values().iter() {
-	    out[top_dim + *row] = *value;
-	}
-	out
-    }
-
-    /// Add a RHS element in the group 2 matrix
-    pub fn add_rhs_stamp(&mut self, e: usize, x: f64) {
-	self.bottom.set_value(e, 1, x);
     }
 }
