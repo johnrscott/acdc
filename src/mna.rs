@@ -214,23 +214,14 @@ impl MnaRhs {
     }
     
     pub fn get_vector(self, top_dim: usize, bottom_dim: usize) -> Vec<f64> {
-	let mut v_top = vec![0.0; top_dim];
-	let mut v_bottom = vec![0.0; bottom_dim];
+	let mut out = vec![0.0; top_dim + bottom_dim];
 	for ((row, _), value) in self.top.values().iter() {
-	    v_top[*row] = *value;
+	    out[*row] = *value;
 	}
 	for ((row, _), value) in self.bottom.values().iter() {
-	    v_top[top_dim + *row] = *value;
+	    out[top_dim + *row] = *value;
 	}
-
-	let v = concat_vertical(self.top, &self.bottom, top_dim);
-	let mut out = Vec::new();
-	for row in  0..v.num_rows() {
-	    out.push(v.get_value(row, 0));
-	}
-	
-	v_top.append(&mut v_bottom);
-	v_top
+	out
     }
 
     /// Add a RHS element in the group 2 matrix
