@@ -2,7 +2,7 @@ use std::{fs::File, io::BufReader, io::BufRead};
 
 use regex::Regex;
 
-use crate::{component::Component, mna::Mna};
+use crate::{component::Component, mna::Mna, sparse::solve};
 
 mod component;
 mod sparse;
@@ -77,6 +77,9 @@ fn parse_netlist_file(file_path: String) {
     let (matrix, rhs) = mna.get_system();
     println!("MNA Matrix:\n {matrix}");
     println!("MNA RHS:\n {:?}", rhs);
+
+    let x = solve(matrix, rhs);
+    println!("Solution: {:?}", x);
 }
 
 fn main() {

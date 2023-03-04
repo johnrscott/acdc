@@ -231,3 +231,5 @@ impl fmt::Display for Mna {
 	writeln!(f, "{}", self.matrix)
     }
 }
+
+
