@@ -167,11 +167,11 @@ impl Mna {
     /// Return (matrix, rhs)
     pub fn get_system(self) -> (SparseMatrix<f64>, Vec<f64>) {
 	let top_dim = self.matrix.top_dim();
+	let bottom_dim = self.matrix.bottom_dim();
 	let matrix = self.matrix.get_matrix();
-	let rhs = self.rhs.get_vector(top_dim);
+	let rhs = self.rhs.get_vector(top_dim, bottom_dim);
 	(matrix, rhs)
     }
-
 }
 
 impl fmt::Display for Mna {
@@ -193,6 +193,7 @@ fn plus_equals(mat: &mut SparseMatrix<f64>, row: usize, col: usize, val: f64) {
 
 impl fmt::Display for MnaMatrix {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+	writeln!(f, "Top dim = {}, bottom dim = {}", self.top_dim, self.bottom_dim)?;
 	writeln!(f, "Top left:")?;
 	writeln!(f, "{}", self.top_left)?;
 	writeln!(f, "Top right:")?;
@@ -211,23 +212,29 @@ impl MnaRhs {
 	    bottom: SparseMatrix::new(),
 	}
     }
-    pub fn get_vector(mut self, top_dim: usize) -> Vec<f64> {
+    
+    pub fn get_vector(self, top_dim: usize, bottom_dim: usize) -> Vec<f64> {
+	let mut v_top = vec![0.0; top_dim];
+	let mut v_bottom = vec![0.0; bottom_dim];
+	for ((row, _), value) in self.top.values().iter() {
+	    v_top[*row] = *value;
+	}
+	for ((row, _), value) in self.bottom.values().iter() {
+	    v_top[top_dim + *row] = *value;
+	}
+
 	let v = concat_vertical(self.top, &self.bottom, top_dim);
 	let mut out = Vec::new();
 	for row in  0..v.num_rows() {
 	    out.push(v.get_value(row, 0));
 	}
 	
-	out
+	v_top.append(&mut v_bottom);
+	v_top
     }
 
     /// Add a RHS element in the group 2 matrix
     pub fn add_rhs_stamp(&mut self, e: usize, x: f64) {
 	self.bottom.set_value(e, 1, x);
     }
-}
-
-fn solve_mna(matrix: MnaMatrix, rhs: MnaRhs) -> Vec<f64> { 
-    let top_dim = matrix.top_dim();
-    solve(matrix.get_matrix(), rhs.get_vector(top_dim))
 }
