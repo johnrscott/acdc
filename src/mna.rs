@@ -81,6 +81,16 @@ impl fmt::Display for Mna {
     }
 }
 
+/// Assumes the matrix is square
+fn plus_equals(mat: &mut SparseMatrix<f64>, row: usize, col: usize, val: f64) {
+    let old_val = if (row < mat.num_rows()) && (col < mat.num_cols()) {
+	mat.get_value(row, col)
+    } else {
+	0.0
+    };
+    mat.set_value(row, col, old_val + val);
+}
+
 impl MnaMatrix {
     pub fn new() -> Self {
 	Self {
@@ -110,14 +120,14 @@ impl MnaMatrix {
 	    panic!("Cannot set symmetric group where n1 == n2");
 	}
 	if n1 == 0 {
-	    self.top_left.set_value(n2 - 1, n2 - 1, x1 + self.top_left.get_value(n2 - 1, n2 - 1));
+	    plus_equals(&mut self.top_left, n2 - 1, n2 - 1, x1);
 	} else if n2 == 0 {
-	    self.top_left.set_value(n1 - 1, n1 - 1, x1 + self.top_left.get_value(n1 - 1, n1 - 1));
+	    plus_equals(&mut self.top_left, n1 - 1, n1 - 1, x1);
  	} else {
-	    self.top_left.set_value(n1 - 1, n1 - 1, x1 + self.top_left.get_value(n1 - 1, n1 - 1));
-	    self.top_left.set_value(n2 - 1, n2 - 1, x1 + self.top_left.get_value(n2 - 1, n2 - 1));
-	    self.top_left.set_value(n1 - 1, n2 - 1, x2 + self.top_left.get_value(n1 - 1, n2 - 1));
-	    self.top_left.set_value(n2 - 1, n1 - 1, x2 + self.top_left.get_value(n2 - 1, n1 - 1));
+	    plus_equals(&mut self.top_left, n1 - 1, n1 - 1, x1);
+	    plus_equals(&mut self.top_left, n2 - 1, n2 - 1, x1);
+	    plus_equals(&mut self.top_left, n1 - 1, n2 - 1, x2);
+	    plus_equals(&mut self.top_left, n2 - 1, n1 - 1, x2);
 	}
     }
 }
