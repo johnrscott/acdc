@@ -90,7 +90,6 @@ impl Component {
 	    voltage,
 	}
     }
-
     
     pub fn new(name: &str, tokens: Vec<&str>, next_free_edge: &mut usize) -> Self {
 	match name {

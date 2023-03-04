@@ -1,9 +1,9 @@
 use std::fmt;
+use std::cmp;
 
 use csuperlu::sparse_matrix::SparseMatrix;
 
-use crate::{sparse::{concat_horizontal, concat_vertical,
-		    transpose, neg, solve}, component::Component};
+use crate::{sparse::{concat_horizontal, concat_vertical, solve}, component::Component};
 
 /// Matrix for modified nodal analysis
 ///
@@ -17,45 +17,100 @@ use crate::{sparse::{concat_horizontal, concat_vertical,
 ///  |   - A2         Z22  |
 /// 
 ///
-pub struct MnaMatrix{ 
+pub struct MnaMatrix{
+    /// The number of rows in the top matrices
+    top_dim: usize,
+    /// The number of rows in the bottom matrices
+    bottom_dim: usize,
     top_left: SparseMatrix<f64>,
     top_right: SparseMatrix<f64>,
     bottom_left: SparseMatrix<f64>,
     bottom_right: SparseMatrix<f64>,
 }
 
-#[derive(Debug)]
-pub struct SparseVec {
-    data: Vec<f64>,
-}
-
-impl SparseVec {
+impl MnaMatrix {
     pub fn new() -> Self {
 	Self {
-	    data: Vec::new(),
-	}
-    }
-    pub fn from(v: Vec<f64>) -> Self{
-	Self {
-	    data: v
+	    top_dim: 0,
+	    bottom_dim: 0,
+	    // Insert some placeholder size here
+	    top_left: SparseMatrix::new(),
+	    top_right: SparseMatrix::new(),
+	    bottom_left: SparseMatrix::new(),
+	    bottom_right: SparseMatrix::new(),
 	}
     }
 
-    pub fn into(self) -> Vec<f64> {
-	self.data
+    pub fn top_dim(&self) -> usize {
+	self.top_dim
     }
-			     
-    pub fn insert(&mut self, index: usize, value: f64) {
-	if index < self.data.len() {
-	    self.data[index] = value;
-	} else {
-	    let mut new_vec = vec![0.0; index + 1 - self.data.len()];
-	    self.data.append(&mut new_vec);
-	    self.data[index] = value;
+
+    pub fn bottom_dim(&self) -> usize {
+	self.bottom_dim
+    }
+    
+    pub fn get_matrix(self) -> SparseMatrix<f64> {
+
+	// Make the top row agree on the number of rows
+	let top = concat_horizontal(self.top_left, &self.top_right);
+	let bottom = concat_horizontal(self.bottom_left, &self.bottom_right);
+	concat_vertical(top, &bottom)
+    }
+
+    /// Add a block of symmetric values to the top-left matrix.
+    ///
+    /// The two indices specified defines a group of four matrix entries $(n_1-1, n_1-1) =
+    /// (n_2-1,n_2-1) = x_1$, and $(n_1-1,n_2-1) = (n_2-1,n_1-1) = x_2$ (i.e. a symmetric block).
+    /// Indices $n1$ and $n2$ are non-zero, and must be different. If either
+    /// $n_1 = 0$ or $n_2 = 0$, then any elements where the matrix index would
+    /// be negative are not written.
+    ///
+    /// This matrix block is added to the current matrix in the top left of the MNA matrix.
+    pub fn add_symmetric_group1(&mut self, n1: usize, n2: usize, x1: f64, x2: f64) {
+	if n1 == n2 {
+	    panic!("Cannot set symmetric group 1 where n1 == n2");
+	}
+	let max_n = cmp::max(n1, n2);
+	self.top_dim = cmp::max(self.top_dim, max_n);
+	if n1 == 0 {
+	    plus_equals(&mut self.top_left, n2 - 1, n2 - 1, x1);
+	} else if n2 == 0 {
+	    plus_equals(&mut self.top_left, n1 - 1, n1 - 1, x1);
+ 	} else {
+	    plus_equals(&mut self.top_left, n1 - 1, n1 - 1, x1);
+	    plus_equals(&mut self.top_left, n2 - 1, n2 - 1, x1);
+	    plus_equals(&mut self.top_left, n1 - 1, n2 - 1, x2);
+	    plus_equals(&mut self.top_left, n2 - 1, n1 - 1, x2);
 	}
     }
-    pub fn append(&mut self, mut a: SparseVec) {
-	self.data.append(&mut a.data)
+
+    /// Add a symmetric component into the off-diagonal blocks and bottom-left matrix
+    ///
+    /// The function accumulates: $x_1$ to $(n_1-1, e)$ (top-right) and $(e, n_1-1)$
+    /// (bottom-left); $x_2$ to $(n_2-1, e)$ (top-right) and $(e, n_2-1)$
+    /// (bottom-left); and $y$ to $(e, e)$ (bottom-right).
+    ///
+    /// In all cases, if all cases, $n_1 != n_2$, and if $n_1 = 0$ or $n_2 = 0$, then
+    /// the corresponding matrix entries are not written.
+    pub fn add_symmetric_group2(
+	&mut self, n1: usize, n2: usize, e: usize,
+	x1: f64, x2: f64, y: f64
+    ) {
+	if n1 == n2 {
+	    panic!("Cannot set symmetric group 2 where n1 == n2");
+	}
+	let max_n = cmp::max(n1, n2);
+	self.top_dim = cmp::max(self.top_dim, max_n);
+	self.bottom_dim = cmp::max(self.bottom_dim, e + 1);
+	plus_equals(&mut self.bottom_right, e, e, y);	
+	if n1 != 0 {
+	    plus_equals(&mut self.top_right, n1 - 1, e, x1);
+	    plus_equals(&mut self.bottom_left, e, n1 - 1, x1);
+	}
+	if n2 != 0 {
+	    plus_equals(&mut self.top_right, n2 - 1, e, x2);
+	    plus_equals(&mut self.bottom_left, e, n2 - 1, x2);
+	}
     }
 }
 
@@ -68,8 +123,8 @@ impl SparseVec {
 /// |   s2   |
 ///
 pub struct MnaRhs {
-    top: SparseVec,
-    bottom: SparseVec,
+    top: SparseMatrix<f64>,
+    bottom: SparseMatrix<f64>,
 }
 
 pub struct Mna {
@@ -99,11 +154,21 @@ impl Mna {
 		}
 		println!("Element stamp for R")
 	    },
+	    Component::IndependentVoltageSource {
+		term_pos,
+		term_neg,
+		current_index,
+		voltage: v,
+	    } => {
+		self.matrix.add_symmetric_group2(term_pos, term_neg, current_index, 1.0, -1.0, 0.0);
+		self.rhs.add_rhs_stamp(current_index, v);
+	    },
 	    _ => todo!("Not currently implemented"),
 	}
     }
 
-    pub fn get_system(self) -> (SparseMatrix<f64>, SparseVec) {
+    /// Return (matrix, rhs)
+    pub fn get_system(self) -> (SparseMatrix<f64>, Vec<f64>) {
 	let matrix = self.matrix.get_matrix();
 	let rhs = self.rhs.get_vector();
 	(matrix, rhs)
@@ -128,76 +193,6 @@ fn plus_equals(mat: &mut SparseMatrix<f64>, row: usize, col: usize, val: f64) {
     mat.set_value(row, col, old_val + val);
 }
 
-impl MnaMatrix {
-    pub fn new() -> Self {
-	Self {
-	    // Insert some placeholder size here
-	    top_left: SparseMatrix::new(),
-	    top_right: SparseMatrix::new(),
-	    bottom_left: SparseMatrix::new(),
-	    bottom_right: SparseMatrix::new(),
-	}
-    }
-    pub fn get_matrix(self) -> SparseMatrix<f64> {
-
-	// Make the top row agree on the number of rows
-	let top = concat_horizontal(self.top_left, &self.top_right);
-	let bottom = concat_horizontal(self.bottom_left, &self.bottom_right);
-	concat_vertical(top, &bottom)
-    }
-
-    /// Add a block of symmetric values to the top-left matrix.
-    ///
-    /// The two indices specified defines a group of four matrix entries $(n_1-1, n_1-1) =
-    /// (n_2-1,n_2-1) = x_1$, and $(n_1-1,n_2-1) = (n_2-1,n_1-1) = x_2$ (i.e. a symmetric block).
-    /// Indices $n1$ and $n2$ are non-zero, and must be different. If either
-    /// $n_1 = 0$ or $n_2 = 0$, then any elements where the matrix index would
-    /// be negative are not written.
-    ///
-    /// This matrix block is added to the current matrix in the top left of the MNA matrix.
-    pub fn add_symmetric_group1(&mut self, n1: usize, n2: usize, x1: f64, x2: f64) {
-	if n1 == n2 {
-	    panic!("Cannot set symmetric group 1 where n1 == n2");
-	}
-	if n1 == 0 {
-	    plus_equals(&mut self.top_left, n2 - 1, n2 - 1, x1);
-	} else if n2 == 0 {
-	    plus_equals(&mut self.top_left, n1 - 1, n1 - 1, x1);
- 	} else {
-	    plus_equals(&mut self.top_left, n1 - 1, n1 - 1, x1);
-	    plus_equals(&mut self.top_left, n2 - 1, n2 - 1, x1);
-	    plus_equals(&mut self.top_left, n1 - 1, n2 - 1, x2);
-	    plus_equals(&mut self.top_left, n2 - 1, n1 - 1, x2);
-	}
-    }
-
-    /// Add a symmetric component into the off-diagonal blocks and bottom-left matrix
-    ///
-    /// The function accumulates: $x_1$ to $(n_1-1, e)$ (top-right) and $(e, n_1-1)$
-    /// (bottom-left); $x_2$ to $(n_2-1, e)$ (top-right) and $(e, n_2-1)$
-    /// (bottom-left); and $y$ to $(e, e)$ (bottom-right).
-    ///
-    /// In all cases, if all cases, $n_1 != n_2$, and if $n_1 = 0$ or $n_2 = 0$, then
-    /// the corresponding matrix entries are not written.
-    pub fn add_symmetric_group2(
-	&mut self, n1: usize, n2: usize, e: usize,
-	x1: f64, x2: f64, y: f64
-    ) {
-	if n1 == n2 {
-	    panic!("Cannot set symmetric group 2 where n1 == n2");
-	}
-	plus_equals(&mut self.bottom_right, e, e, y);	
-	if n1 != 0 {
-	    plus_equals(&mut self.top_right, n1 - 1, e, x1);
-	    plus_equals(&mut self.bottom_left, e, n1 - 1, x1);
-	}
-	if n2 != 0 {
-	    plus_equals(&mut self.top_right, n2 - 1, e, x2);
-	    plus_equals(&mut self.bottom_left, e, n2 - 1, x2);
-	}
-    }
-}
-
 impl fmt::Display for MnaMatrix {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 	writeln!(f, "Top left:")?;
@@ -214,23 +209,26 @@ impl fmt::Display for MnaMatrix {
 impl MnaRhs {
     fn new() -> Self {
 	Self {
-	    top: SparseVec::new(),
-	    bottom: SparseVec::new(),
+	    top: SparseMatrix::new(),
+	    bottom: SparseMatrix::new(),
 	}
     }
-    pub fn get_vector(mut self) -> SparseVec {
-	self.top.append(self.bottom);
-	self.top
+    pub fn get_vector(mut self) -> Vec<f64> {
+	let v = concat_vertical(self.top, &self.bottom);
+	let mut out = Vec::new();
+	for row in  0..v.num_rows() {
+	    out.push(v.get_value(row, 0));
+	}
+	
+	out
     }
 
     /// Add a RHS element in the group 2 matrix
     pub fn add_rhs_stamp(&mut self, e: usize, x: f64) {
-	self.bottom.insert(e, x);
+	self.bottom.set_value(e, 1, x);
     }
-
-
 }
 
 fn solve_mna(matrix: MnaMatrix, rhs: MnaRhs) -> Vec<f64> { 
-    solve(matrix.get_matrix(), rhs.get_vector().into())
+    solve(matrix.get_matrix(), rhs.get_vector())
 }
