@@ -96,25 +96,28 @@ impl MnaMatrix {
 	concat_vertical(top, &bottom)
     }
 
-    /// Add a block of symmetric values to the top left matrix. The two indices specified
-    /// defines a group of four matrix entries $(n_1-1, n_1-1) = (n_2-1,n_2-1) = x_1$, and
-    /// $(n_1-1,n_2-1) = (n_2-1,n_1-1) = x_2$ (i.e. a symmetric block). Indices $n1$
-    /// and $n2$ are non-zero, and must be different. If either $n_1 = 0$ or $n_2 = 0$, then
-    /// any elements where the matrix index would be negative are not written.
-    /// 
+    /// Add a block of symmetric values to the top left matrix.
+    ///
+    /// The two indices specified defines a group of four matrix entries $(n_1-1, n_1-1) =
+    /// (n_2-1,n_2-1) = x_1$, and $(n_1-1,n_2-1) = (n_2-1,n_1-1) = x_2$ (i.e. a symmetric block).
+    /// Indices $n1$ and $n2$ are non-zero, and must be different. If either
+    /// $n_1 = 0$ or $n_2 = 0$, then any elements where the matrix index would
+    /// be negative are not written.
+    ///
+    /// This matrix block is added to the current matrix in the top left of the MNA matrix.
     pub fn add_symmetric_group1(&mut self, n1: usize, n2: usize, x1: f64, x2: f64) {
 	if n1 == n2 {
 	    panic!("Cannot set symmetric group where n1 == n2");
 	}
 	if n1 == 0 {
-	    self.top_left.set_value(n2 - 1, n2 - 1, x1);
+	    self.top_left.set_value(n2 - 1, n2 - 1, x1 + self.top_left.get_value(n2 - 1, n2 - 1));
 	} else if n2 == 0 {
-	    self.top_left.set_value(n1 - 1, n1 - 1, x1);
+	    self.top_left.set_value(n1 - 1, n1 - 1, x1 + self.top_left.get_value(n1 - 1, n1 - 1));
  	} else {
-	    self.top_left.set_value(n1 - 1, n1 - 1, x1);
-	    self.top_left.set_value(n2 - 1, n2 - 1, x1);
-	    self.top_left.set_value(n1 - 1, n2 - 1, x2);
-	    self.top_left.set_value(n2 - 1, n1 - 1, x2);
+	    self.top_left.set_value(n1 - 1, n1 - 1, x1 + self.top_left.get_value(n1 - 1, n1 - 1));
+	    self.top_left.set_value(n2 - 1, n2 - 1, x1 + self.top_left.get_value(n2 - 1, n2 - 1));
+	    self.top_left.set_value(n1 - 1, n2 - 1, x2 + self.top_left.get_value(n1 - 1, n2 - 1));
+	    self.top_left.set_value(n2 - 1, n1 - 1, x2 + self.top_left.get_value(n2 - 1, n1 - 1));
 	}
     }
 }
