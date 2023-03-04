@@ -210,7 +210,6 @@ impl Mna {
 			*term_1, *term_2, *edge, 1.0, -1.0, -*r),
 		    None => self.matrix.add_symmetric_group1(*term_1, *term_2, 1.0/r, -1.0/r)
 		}
-		println!("Element stamp for R")
 	    },
 	    Component::IndependentVoltageSource {
 		term_pos,

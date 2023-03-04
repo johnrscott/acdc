@@ -28,8 +28,6 @@ fn parse_name_id(token: &str) -> (String, usize) {
 	.unwrap_or_else(|error| {
 	    panic!("Failed to parse ID {id} as unsigned integer ({error})")
 	});
-    println!("Found name {name} and id {id}");
-    
     (name, id)
 }
 
@@ -78,10 +76,8 @@ fn parse_netlist_file(
 	let (name, id) = parse_name_id(name_id);
 
 	// Collect the other argument
-	let mut other_tokens: Vec<&str> = tokens.collect();
-		
+	let mut other_tokens: Vec<&str> = tokens.collect();		
 	let component = Component::new(&name, other_tokens, &mut next_free_edge);
-	println!("{:?}", component);
 
 	mna.add_element_stamp(&component);
 
@@ -106,19 +102,17 @@ fn main() {
 
     let (mut instances, mut mna) = parse_netlist_file(file_path);
 
-    println!("{:?}", instances);
-
     let num_nodes = mna.num_nodes();
 	
     let (matrix, rhs) = mna.get_system();
 
+    println!("{}", matrix);
+    
     let x = solve(matrix, rhs);
-
+    println!();
+    
     let voltages = &x[0..num_nodes];
     let currents = &x[num_nodes..];
-
-    println!("{:?}", voltages);
-    println!("{:?}", currents);
 
     for n in 0..instances.len() {
 	match instances[n].component.current_index() {
@@ -129,7 +123,7 @@ fn main() {
 	}
     }
 
-    println!("{:?}", instances);
+    
 
     // Print the components
     println!("Components:");
