@@ -17,9 +17,9 @@ use crate::{sparse::{concat_horizontal, concat_vertical,
 /// 
 ///
 pub struct MnaMatrix<P: ValueType<P>> {
-    a1_y11_a1t: SparseMatrix<P>,
-    a2: SparseMatrix<P>,
-    z22: SparseMatrix<P>,
+    top_left: SparseMatrix<P>,
+    top_right: SparseMatrix<P>,
+    bottom_right: SparseMatrix<P>,
 }
 
 /// Modified nodal analysis right-hand side
@@ -48,6 +48,28 @@ impl<P: ValueType<P>> Mna<P> {
 	}
     }
     pub fn add_element_stamp(&mut self, component: Component) {
+	match component {
+	    Component::Resistor {
+		term_1,
+		term_2,
+		resistance,
+		group2,
+	    } => {
+		if group2 {
+		    todo!("Not implemented yet")
+		} else {
+		    let r = resistance;
+		    self.matrix.add_symmetric_group1(term_1, term_2, P::one()/r, P::one()/(-r));
+		}
+		println!("Element stamp for R")
+	    },
+	    Component::VoltageSource {
+		term_pos,
+		term_neg,
+		voltage,
+	    } => println!("Element stamp for V"),
+	    _ => println!("Not currently implemented"),
+	}
     }
 }
 
@@ -55,15 +77,38 @@ impl<P: ValueType<P>> MnaMatrix<P> {
     pub fn new() -> Self {
 	Self {
 	    // Insert some placeholder size here
-	    a1_y11_a1t: SparseMatrix::new(0, 0),
-	    a2: SparseMatrix::new(0, 0),
-	    z22: SparseMatrix::new(0, 0),
+	    top_left: SparseMatrix::new(),
+	    top_right: SparseMatrix::new(),
+	    bottom_right: SparseMatrix::new(),
 	}
     }
     pub fn get_matrix(self) -> SparseMatrix<P> {
-	let top = concat_horizontal(self.a1_y11_a1t, &self.a2);
-	let bottom = concat_horizontal(neg(transpose(self.a2)), &self.z22);
+	let top = concat_horizontal(self.top_left, &self.top_right);
+	let bottom = concat_horizontal(neg(transpose(self.top_right)), &self.bottom_right);
 	concat_vertical(top, &bottom)
+    }
+
+    /// Add a block of symmetric values to the top left matrix. The two indices specified
+    /// defines a group of four matrix entries $(n_1-1, n_1-1) = (n_2-1,n_2-1) = x_1$, and
+    /// $(n_1-1,n_2-1) = (n_2-1,n_1-1) = x_2$ (i.e. a symmetric block). Indices $n1$
+    /// and $n2$ are non-zero, and must be different. If either $n_1 = 0$ or $n_2 = 0$, then
+    /// any elements where the matrix index would be negative are not written.
+    /// 
+    pub fn add_symmetric_group1(&mut self, n1: usize, n2: usize, x1: P, x2: P) {
+	if n1 == n2 {
+	    panic!("Cannot set symmetric group where n1 == n2");
+	}
+
+	if n1 == 0 {
+	    self.top_left.set_value(n2 - 1, n2 - 1, x1);
+	} else if n2 == 0 {
+	    self.top_left.set_value(n1 - 1, n1 - 1, x1);
+ 	} else {
+	    self.top_left.set_value(n1 - 1, n1 - 1, x1);
+	    self.top_left.set_value(n2 - 1, n2 - 1, x1);
+	    self.top_left.set_value(n1 - 1, n2 - 1, x2);
+	    self.top_left.set_value(n2 - 1, n1 - 1, x2);
+	}
     }
 }
 

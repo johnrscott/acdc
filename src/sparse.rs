@@ -2,8 +2,7 @@ use csuperlu::{sparse_matrix::SparseMatrix, c::{value_type::ValueType, options::
 
 pub fn transpose<P: ValueType<P>>(mut a: SparseMatrix<P>) -> SparseMatrix<P> {
     // This does not modify in place yet -- todo
-    let mut transposed = SparseMatrix::new(a.num_rows(),
-					   a.num_cols());
+    let mut transposed = SparseMatrix::new();
 
     //    
     for ((row, col), value) in a.values().iter() {
@@ -35,7 +34,7 @@ pub fn concat_vertical<P: ValueType<P>>(mut a: SparseMatrix<P>, b: &SparseMatrix
 }
 
 pub fn neg<P: ValueType<P>>(mat: SparseMatrix<P>) -> SparseMatrix<P> {
-    let mut new_mat = SparseMatrix::<P>::new(mat.num_rows(), mat.num_cols());
+    let mut new_mat = SparseMatrix::<P>::new();
     for ((row, col), value) in mat.values().iter() {
 	new_mat.set_value(*row, *col, *value);
     }

@@ -74,7 +74,6 @@ fn parse_netlist_file(file_path: String) {
 	
 	let component = Component::new(&name, other_tokens, group2);
 	println!("{:?}", component);
-
 	
 	mna.add_element_stamp(component);
 	
