@@ -1,6 +1,6 @@
-use csuperlu::{sparse_matrix::SparseMatrix, c::{value_type::ValueType, options::ColumnPermPolicy, stat::CSuperluStat}, dense::DenseMatrix, simple_driver::{SimpleSystem, self}};
+use csuperlu::{sparse_matrix::SparseMatrix, c::{options::ColumnPermPolicy, stat::CSuperluStat}, dense::DenseMatrix, simple_driver::SimpleSystem};
 
-pub fn transpose<P: ValueType<P>>(mut a: SparseMatrix<P>) -> SparseMatrix<P> {
+pub fn transpose(mut a: SparseMatrix<f64>) -> SparseMatrix<f64> {
     // This does not modify in place yet -- todo
     let mut transposed = SparseMatrix::new();
 
@@ -11,7 +11,7 @@ pub fn transpose<P: ValueType<P>>(mut a: SparseMatrix<P>) -> SparseMatrix<P> {
     transposed
 }
 
-pub fn concat_horizontal<P: ValueType<P>>(mut a: SparseMatrix<P>, b: &SparseMatrix<P>) -> SparseMatrix<P> {
+pub fn concat_horizontal(mut a: SparseMatrix<f64>, b: &SparseMatrix<f64>) -> SparseMatrix<f64> {
     if a.num_rows() != b.num_rows() {
 	panic!("Cannot horizontally concatenate matrices of different heights");
     }
@@ -22,7 +22,7 @@ pub fn concat_horizontal<P: ValueType<P>>(mut a: SparseMatrix<P>, b: &SparseMatr
     a
 }
 
-pub fn concat_vertical<P: ValueType<P>>(mut a: SparseMatrix<P>, b: &SparseMatrix<P>) -> SparseMatrix<P> {
+pub fn concat_vertical(mut a: SparseMatrix<f64>, b: &SparseMatrix<f64>) -> SparseMatrix<f64> {
     if a.num_cols() != b.num_cols() {
 	panic!("Cannot horizontally concatenate matrices of different widths");
     }
@@ -33,15 +33,15 @@ pub fn concat_vertical<P: ValueType<P>>(mut a: SparseMatrix<P>, b: &SparseMatrix
     a
 }
 
-pub fn neg<P: ValueType<P>>(mat: SparseMatrix<P>) -> SparseMatrix<P> {
-    let mut new_mat = SparseMatrix::<P>::new();
+pub fn neg(mat: SparseMatrix<f64>) -> SparseMatrix<f64> {
+    let mut new_mat = SparseMatrix::<f64>::new();
     for ((row, col), value) in mat.values().iter() {
 	new_mat.set_value(*row, *col, *value);
     }
     new_mat
 }
 
-pub fn solve<P: ValueType<P>>(a: SparseMatrix<P>, b: Vec<P>) -> Vec<P> {
+pub fn solve(a: SparseMatrix<f64>, b: Vec<f64>) -> Vec<f64> {
     if a.num_rows() != b.len() {
 	panic!("Cannot solve system; incompatible dimensions");
     }

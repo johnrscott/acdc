@@ -1,4 +1,5 @@
-use csuperlu::c::value_type::ValueType;
+use std::fmt;
+
 use csuperlu::sparse_matrix::SparseMatrix;
 
 use crate::{sparse::{concat_horizontal, concat_vertical,
@@ -16,10 +17,10 @@ use crate::{sparse::{concat_horizontal, concat_vertical,
 ///  |   - A2         Z22  |
 /// 
 ///
-pub struct MnaMatrix<P: ValueType<P>> {
-    top_left: SparseMatrix<P>,
-    top_right: SparseMatrix<P>,
-    bottom_right: SparseMatrix<P>,
+pub struct MnaMatrix{ 
+    top_left: SparseMatrix<f64>,
+    top_right: SparseMatrix<f64>,
+    bottom_right: SparseMatrix<f64>,
 }
 
 /// Modified nodal analysis right-hand side
@@ -30,17 +31,17 @@ pub struct MnaMatrix<P: ValueType<P>> {
 /// |        |
 /// |   s2   |
 ///
-pub struct MnaRhs<P: ValueType<P>> {
-    minus_a1_s1: Vec<P>,
-    s2: Vec<P>,
+pub struct MnaRhs {
+    minus_a1_s1: Vec<f64>,
+    s2: Vec<f64>,
 }
 
-pub struct Mna<P: ValueType<P>> {
-    matrix: MnaMatrix<P>,
-    rhs: MnaRhs<P>,
+pub struct Mna {
+    matrix: MnaMatrix,
+    rhs: MnaRhs,
 }
 
-impl<P: ValueType<P>> Mna<P> {
+impl Mna {
     pub fn new() -> Self {
 	Self {
 	    matrix: MnaMatrix::new(),
@@ -59,7 +60,7 @@ impl<P: ValueType<P>> Mna<P> {
 		    todo!("Not implemented yet")
 		} else {
 		    let r = resistance;
-		    self.matrix.add_symmetric_group1(term_1, term_2, P::one()/r, P::one()/(-r));
+		    self.matrix.add_symmetric_group1(term_1, term_2, 1.0/r, -1.0/r);
 		}
 		println!("Element stamp for R")
 	    },
@@ -73,7 +74,14 @@ impl<P: ValueType<P>> Mna<P> {
     }
 }
 
-impl<P: ValueType<P>> MnaMatrix<P> {
+impl fmt::Display for Mna {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+	writeln!(f, "MNA matrix:")?;
+	writeln!(f, "{}", self.matrix)
+    }
+}
+
+impl MnaMatrix {
     pub fn new() -> Self {
 	Self {
 	    // Insert some placeholder size here
@@ -82,7 +90,7 @@ impl<P: ValueType<P>> MnaMatrix<P> {
 	    bottom_right: SparseMatrix::new(),
 	}
     }
-    pub fn get_matrix(self) -> SparseMatrix<P> {
+    pub fn get_matrix(self) -> SparseMatrix<f64> {
 	let top = concat_horizontal(self.top_left, &self.top_right);
 	let bottom = concat_horizontal(neg(transpose(self.top_right)), &self.bottom_right);
 	concat_vertical(top, &bottom)
@@ -94,11 +102,10 @@ impl<P: ValueType<P>> MnaMatrix<P> {
     /// and $n2$ are non-zero, and must be different. If either $n_1 = 0$ or $n_2 = 0$, then
     /// any elements where the matrix index would be negative are not written.
     /// 
-    pub fn add_symmetric_group1(&mut self, n1: usize, n2: usize, x1: P, x2: P) {
+    pub fn add_symmetric_group1(&mut self, n1: usize, n2: usize, x1: f64, x2: f64) {
 	if n1 == n2 {
 	    panic!("Cannot set symmetric group where n1 == n2");
 	}
-
 	if n1 == 0 {
 	    self.top_left.set_value(n2 - 1, n2 - 1, x1);
 	} else if n2 == 0 {
@@ -112,19 +119,30 @@ impl<P: ValueType<P>> MnaMatrix<P> {
     }
 }
 
-impl<P: ValueType<P>> MnaRhs<P> {
+impl fmt::Display for MnaMatrix {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+	writeln!(f, "A1 Y11 A1^T:")?;
+	writeln!(f, "{}", self.top_left)?;
+	writeln!(f, "A2:")?;
+	writeln!(f, "{}", self.top_right)?;
+	writeln!(f, "Z22:")?;
+	writeln!(f, "{}", self.bottom_right)
+    }
+}
+
+impl MnaRhs {
     fn new() -> Self {
 	Self {
 	    minus_a1_s1: Vec::new(),
 	    s2: Vec::new(),
 	}
     }
-    pub fn get_vector(mut self) -> Vec<P> {
+    pub fn get_vector(mut self) -> Vec<f64> {
 	self.minus_a1_s1.append(&mut self.s2);
 	self.minus_a1_s1
     }
 }
 
-fn solve_mna<P: ValueType<P>>(matrix: MnaMatrix<P>, rhs: MnaRhs<P>) -> Vec<P> { 
+fn solve_mna(matrix: MnaMatrix, rhs: MnaRhs) -> Vec<f64> { 
     solve(matrix.get_matrix(), rhs.get_vector())
 }

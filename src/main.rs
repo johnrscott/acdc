@@ -41,7 +41,7 @@ fn parse_netlist_file(file_path: String) {
 
     let buffered = BufReader::new(input);
 
-    let mut mna = Mna::<f64>::new();
+    let mut mna = Mna::new();
     
     for line in buffered.lines().map(|ln| ln.unwrap()) {
 
@@ -78,6 +78,9 @@ fn parse_netlist_file(file_path: String) {
 	mna.add_element_stamp(component);
 	
     }
+
+    println!("{}", mna);
+    
 }
 
 fn main() {
