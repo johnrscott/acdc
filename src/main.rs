@@ -33,8 +33,20 @@ fn parse_name_id(token: &str) -> (String, usize) {
     (name, id)
 }
 
-fn parse_netlist_file(file_path: String) {
 
+#[derive(Debug)]
+struct Instance {
+    name: String,
+    component: Component,
+    current: Option<f64>,
+}
+
+
+/// Returns (instances, mna system)
+fn parse_netlist_file(
+    file_path: String
+) -> (Vec<Instance>, Mna) {
+    
     let input = File::open(&file_path).unwrap_or_else(|error| {
 	panic!("Could not open file {file_path} ({})", error.kind());
     });
@@ -45,6 +57,8 @@ fn parse_netlist_file(file_path: String) {
 
     // For group 2 elements, index of their current
     let mut next_free_edge = 0;
+
+    let mut instances = Vec::new();
     
     for line in buffered.lines().map(|ln| ln.unwrap()) {
 
@@ -69,17 +83,16 @@ fn parse_netlist_file(file_path: String) {
 	let component = Component::new(&name, other_tokens, &mut next_free_edge);
 	println!("{:?}", component);
 
-	mna.add_element_stamp(component);
+	mna.add_element_stamp(&component);
+
+	instances.push(Instance {
+	    name: name_id.to_string(),
+	    component,
+	    current: None,
+	});
     }
 
-    println!("{mna}");
-    
-    let (matrix, rhs) = mna.get_system();
-    println!("MNA Matrix:\n {matrix}");
-    println!("MNA RHS:\n {:?}", rhs);
-
-    let x = solve(matrix, rhs);
-    println!("Solution: {:?}", x);
+    (instances, mna)
 }
 
 fn main() {
@@ -91,5 +104,30 @@ fn main() {
     }
     let file_path = args[1].to_string();
 
-    parse_netlist_file(file_path);
+    let (mut instances, mut mna) = parse_netlist_file(file_path);
+
+    println!("{:?}", instances);
+
+    let num_nodes = mna.num_nodes();
+	
+    let (matrix, rhs) = mna.get_system();
+
+    let x = solve(matrix, rhs);
+
+    let voltages = &x[0..num_nodes];
+    let currents = &x[num_nodes..];
+
+    println!("{:?}", voltages);
+    println!("{:?}", currents);
+
+    for n in 0..instances.len() {
+	match instances[n].component.current_index() {
+	    Some(index) => {
+		instances[n].current = Some(currents[index])
+	    },
+	    None => {},
+	}
+    }
+
+    println!("{:?}", instances);
 }

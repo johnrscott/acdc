@@ -188,7 +188,16 @@ impl Mna {
 	    rhs: MnaRhs::new(),
 	}
     }
-    pub fn add_element_stamp(&mut self, component: Component) {
+
+    pub fn num_nodes(&self) -> usize {
+	self.matrix.top_dim()
+    }
+
+    pub fn num_currents(&self) -> usize {
+	self.matrix.bottom_dim()
+    }
+    
+    pub fn add_element_stamp(&mut self, component: &Component) {
 	match component {
 	    Component::Resistor {
 		term_1,
@@ -198,8 +207,8 @@ impl Mna {
 	    } => {
 		match current_index {
 		    Some(edge) => self.matrix.add_symmetric_group2(
-			term_1, term_2, edge, 1.0, -1.0, -r),
-		    None => self.matrix.add_symmetric_group1(term_1, term_2, 1.0/r, -1.0/r)
+			*term_1, *term_2, *edge, 1.0, -1.0, -*r),
+		    None => self.matrix.add_symmetric_group1(*term_1, *term_2, 1.0/r, -1.0/r)
 		}
 		println!("Element stamp for R")
 	    },
@@ -209,8 +218,8 @@ impl Mna {
 		current_index,
 		voltage: v,
 	    } => {
-		self.matrix.add_symmetric_group2(term_pos, term_neg, current_index, 1.0, -1.0, 0.0);
-		self.rhs.add_rhs_stamp(current_index, v);
+		self.matrix.add_symmetric_group2(*term_pos, *term_neg, *current_index, 1.0, -1.0, 0.0);
+		self.rhs.add_rhs_stamp(*current_index, *v);
 	    },
 	    _ => todo!("Not currently implemented"),
 	}

@@ -95,7 +95,22 @@ impl Component {
 	match name {
 	    "r" => Self::new_resistor(tokens, next_free_edge),
 	    "v" => Self::new_independent_voltage_source(tokens, next_free_edge),
-	    &_ => todo!("Not yet implemented {name}"),
+	    &_ => todo!("Not yet implemented component"),
 	}
     }
+
+    /// Return the current index, if this element has a current
+    pub fn current_index(&self) -> Option<usize> {
+	match self {
+	    Self::IndependentVoltageSource {
+		current_index,
+		..
+	    } => Some(*current_index),
+	    Self::Resistor {
+		current_index,
+		..
+	    } => *current_index,
+	}
+    }
+
 }
