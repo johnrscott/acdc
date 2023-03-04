@@ -25,11 +25,36 @@ pub enum Component {
 	current_index: Option<usize>,
 	resistance: f64,
     },
+    /// Independent voltage source (group2)
+    IndependentVoltageSource {
+	term_pos: usize,
+	term_neg: usize,
+	current_index: usize,
+	voltage: f64,
+    },
+}
+
+
+fn get_current_index(tokens: &mut Vec<&str>, next_free_edge: &mut usize) -> Option<usize> {
+    // Check if the last element is a group 2 specifier
+    let current_index;
+    if tokens.last().unwrap().to_string() == "G2" {
+	current_index = Some(*next_free_edge);
+	tokens.pop();
+	*next_free_edge += 1;
+    } else {
+	current_index = None;
+    }
+    current_index
 }
 
 impl Component {
 
-    fn new_resistor(tokens: Vec<&str>, current_index: Option<usize>) -> Self {
+    fn new_resistor(mut tokens: Vec<&str>, next_free_current_index: &mut usize) -> Self {
+
+	// Check for current_index
+	let current_index = get_current_index(&mut tokens, next_free_current_index);
+
 	if tokens.len() != 3 {
 	    panic!("Expected three tokens for Resistor")
 	}
@@ -45,9 +70,32 @@ impl Component {
 	}
     }
 
-    pub fn new(name: &str, tokens: Vec<&str>, current_index: Option<usize>) -> Self {
+    fn new_independent_voltage_source(tokens: Vec<&str>, next_free_current_index: &mut usize) -> Self {
+
+	if tokens.len() != 3 {
+	    panic!("Expected three tokens for independent voltage source")
+	}
+
+	let current_index = *next_free_current_index;
+	*next_free_current_index += 1;
+	
+	let term_pos = tokens[0].parse().expect("Failed to parse positive terminal");
+	let term_neg = tokens[1].parse().expect("Failed to parse negative terminal");
+	let voltage = tokens[2].parse().expect("Failed to parse resistance value");
+	
+	Self::IndependentVoltageSource {
+	    term_pos,
+	    term_neg,
+	    current_index,
+	    voltage,
+	}
+    }
+
+    
+    pub fn new(name: &str, tokens: Vec<&str>, next_free_edge: &mut usize) -> Self {
 	match name {
-	    "r" => Self::new_resistor(tokens, current_index),
+	    "r" => Self::new_resistor(tokens, next_free_edge),
+	    "v" => Self::new_independent_voltage_source(tokens, next_free_edge),
 	    &_ => todo!("Not yet implemented {name}"),
 	}
     }

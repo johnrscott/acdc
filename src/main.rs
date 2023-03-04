@@ -65,18 +65,8 @@ fn parse_netlist_file(file_path: String) {
 
 	// Collect the other argument
 	let mut other_tokens: Vec<&str> = tokens.collect();
-	
-	// Check if the last element is a group 2 specifier
-	let current_index;
-	if other_tokens.last().unwrap().to_string() == "G2" {
-	    current_index = Some(next_free_edge);
-	    other_tokens.pop();
-	    next_free_edge += 1;
-	} else {
-	    current_index = None;
-	}
-	
-	let component = Component::new(&name, other_tokens, current_index);
+		
+	let component = Component::new(&name, other_tokens, &mut next_free_edge);
 	println!("{:?}", component);
 
 	mna.add_element_stamp(component);

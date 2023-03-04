@@ -24,6 +24,41 @@ pub struct MnaMatrix{
     bottom_right: SparseMatrix<f64>,
 }
 
+#[derive(Debug)]
+pub struct SparseVec {
+    data: Vec<f64>,
+}
+
+impl SparseVec {
+    pub fn new() -> Self {
+	Self {
+	    data: Vec::new(),
+	}
+    }
+    pub fn from(v: Vec<f64>) -> Self{
+	Self {
+	    data: v
+	}
+    }
+
+    pub fn into(self) -> Vec<f64> {
+	self.data
+    }
+			     
+    pub fn insert(&mut self, index: usize, value: f64) {
+	if index < self.data.len() {
+	    self.data[index] = value;
+	} else {
+	    let mut new_vec = vec![0.0; index + 1 - self.data.len()];
+	    self.data.append(&mut new_vec);
+	    self.data[index] = value;
+	}
+    }
+    pub fn append(&mut self, mut a: SparseVec) {
+	self.data.append(&mut a.data)
+    }
+}
+
 /// Modified nodal analysis right-hand side
 ///
 /// The right-hand side for modified nodal analysis is
@@ -33,8 +68,8 @@ pub struct MnaMatrix{
 /// |   s2   |
 ///
 pub struct MnaRhs {
-    minus_a1_s1: Vec<f64>,
-    s2: Vec<f64>,
+    top: SparseVec,
+    bottom: SparseVec,
 }
 
 pub struct Mna {
@@ -68,7 +103,7 @@ impl Mna {
 	}
     }
 
-    pub fn get_system(self) -> (SparseMatrix<f64>, Vec<f64>) {
+    pub fn get_system(self) -> (SparseMatrix<f64>, SparseVec) {
 	let matrix = self.matrix.get_matrix();
 	let rhs = self.rhs.get_vector();
 	(matrix, rhs)
@@ -179,16 +214,23 @@ impl fmt::Display for MnaMatrix {
 impl MnaRhs {
     fn new() -> Self {
 	Self {
-	    minus_a1_s1: Vec::new(),
-	    s2: Vec::new(),
+	    top: SparseVec::new(),
+	    bottom: SparseVec::new(),
 	}
     }
-    pub fn get_vector(mut self) -> Vec<f64> {
-	self.minus_a1_s1.append(&mut self.s2);
-	self.minus_a1_s1
+    pub fn get_vector(mut self) -> SparseVec {
+	self.top.append(self.bottom);
+	self.top
     }
+
+    /// Add a RHS element in the group 2 matrix
+    pub fn add_rhs_stamp(&mut self, e: usize, x: f64) {
+	self.bottom.insert(e, x);
+    }
+
+
 }
 
 fn solve_mna(matrix: MnaMatrix, rhs: MnaRhs) -> Vec<f64> { 
-    solve(matrix.get_matrix(), rhs.get_vector())
+    solve(matrix.get_matrix(), rhs.get_vector().into())
 }
