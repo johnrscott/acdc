@@ -1,3 +1,5 @@
+use std::fmt;
+
 
 /// Component type
 ///
@@ -112,5 +114,25 @@ impl Component {
 	    } => *current_index,
 	}
     }
+}
 
+impl fmt::Display for Component {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+	match self {
+	    Self::Resistor {
+		term_1,
+		term_2,
+		resistance,
+		..
+	    } => write!(f,
+			  "{term_1} ---- R({resistance} Ohm) ---- {term_2}")?,
+	    Self::IndependentVoltageSource {
+		term_pos,
+		term_neg,
+		voltage,
+		..
+	    } => write!(f, "{term_pos}(+) --- V({voltage} V) ---- {term_neg}")?,
+	}
+	Ok(())
+    }
 }

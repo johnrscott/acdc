@@ -130,4 +130,22 @@ fn main() {
     }
 
     println!("{:?}", instances);
+
+    // Print the components
+    println!("Components:");
+    for inst in instances.iter() {
+	print!("{}: {}", inst.name, inst.component);
+	match inst.current {
+	    Some(current) => println!(" ({} A)", current),
+	    None => println!(),
+	}
+    }
+    println!();
+
+    println!{"Node voltages:"};
+    println!("(0: 0 V)");
+    for n in 0..voltages.len() {
+	println!("{}: {} V", n+1, voltages[n]);
+    }
+    
 }
