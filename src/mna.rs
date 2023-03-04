@@ -51,9 +51,9 @@ impl MnaMatrix {
     pub fn get_matrix(self) -> SparseMatrix<f64> {
 	//let h_pad = self.top_dim - self.top_left.num_cols();
 	//let v_pad = self.bottom_dim - self.top_left.num_cols();
-	let top = concat_horizontal(self.top_left, &self.top_right, 0);
-	let bottom = concat_horizontal(self.bottom_left, &self.bottom_right, 0);
-	concat_vertical(top, &bottom, 0)
+	let top = concat_horizontal(self.top_left, &self.top_right);
+	let bottom = concat_horizontal(self.bottom_left, &self.bottom_right);
+	concat_vertical(top, &bottom)
     }
 
     /// Add a block of symmetric values to the top-left matrix.

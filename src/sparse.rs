@@ -18,9 +18,8 @@ pub fn transpose(mut a: SparseMatrix<f64>) -> SparseMatrix<f64> {
 pub fn concat_horizontal(
     mut a: SparseMatrix<f64>,
     b: &SparseMatrix<f64>,
-    h_pad: usize
 ) -> SparseMatrix<f64> {
-    let offset = a.num_cols() + h_pad;
+    let offset = a.num_cols();
     for ((row, col), value) in b.values().iter() {
 	a.set_value(*row, offset + *col, *value);
     }
@@ -30,9 +29,8 @@ pub fn concat_horizontal(
 pub fn concat_vertical(
     mut a: SparseMatrix<f64>,
     b: &SparseMatrix<f64>,
-    v_pad: usize,
 ) -> SparseMatrix<f64> {
-    let offset = a.num_rows() + v_pad;
+    let offset = a.num_rows();
     for ((row, col), value) in b.values().iter() {
 	a.set_value(offset + *row, *col, *value);
     }
