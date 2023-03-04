@@ -50,9 +50,10 @@ impl MnaMatrix {
     
     pub fn get_matrix(self) -> SparseMatrix<f64> {
 	let h_pad = self.top_dim - self.top_left.num_cols();
-	let v_pad = self.bottom_dim - self.top_left.num_rows();
 	let top = concat_horizontal(self.top_left, &self.top_right, h_pad);
-	let bottom = concat_horizontal(self.bottom_left, &self.bottom_right, h_pad);
+	let v_pad = self.top_dim - top.num_rows();
+	let bottom = concat_horizontal(self.bottom_left, &self.bottom_right,
+				       h_pad);
 	concat_vertical(top, &bottom, v_pad)
     }
 
