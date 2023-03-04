@@ -23,7 +23,7 @@ pub enum Component {
     /// Independent current source (group 1 or group 2)
     CurrentSource { term_pos: usize, term_neg: usize, current: f64, group2: bool },
     /// Fixed resistor (group 1 or group 2)
-    Resistor { term_1: usize, term_2: usize, resistance: f64, group2: bool },
+    Resistor { edge: usize, term_1: usize, term_2: usize, resistance: f64, group2: bool },
     /// Capacitor
     Capacitor { term_1: usize, term_2: usize, capacitance: f64 },
     /// Inductor
@@ -75,14 +75,16 @@ impl Component {
 	}
     }
 
-    fn new_resistor(tokens: Vec<&str>, group2: bool) -> Self {
+    fn new_resistor(tokens: Vec<&str>, group2: bool, edge: usize) -> Self {
 	if tokens.len() != 3 {
 	    panic!("Expected three tokens for Resistor")
 	}
 	let term_1 = tokens[0].parse().expect("Failed to parse positive terminal");
 	let term_2 = tokens[1].parse().expect("Failed to parse negative terminal");
 	let resistance = tokens[2].parse().expect("Failed to parse resistance value");
+	
 	Self::Resistor {
+	    edge,
 	    term_1,
 	    term_2,
 	    resistance,
@@ -186,11 +188,11 @@ impl Component {
 	}
     }
     
-    pub fn new(name: &str, tokens: Vec<&str>, group2: bool) -> Self {
+    pub fn new(name: &str, tokens: Vec<&str>, group2: bool, edge: usize) -> Self {
 	match name {
 	    "v" => Self::new_voltage_source(tokens),
 	    "i" => Self::new_current_source(tokens, group2),
-	    "r" => Self::new_resistor(tokens, group2),
+	    "r" => Self::new_resistor(tokens, group2, edge),
 	    "c" => Self::new_capacitor(tokens),
 	    "l" => Self::new_inductor(tokens),
 	    "d" => Self::new_diode(tokens),

@@ -42,6 +42,9 @@ fn parse_netlist_file(file_path: String) {
     let buffered = BufReader::new(input);
 
     let mut mna = Mna::new();
+
+    // For enumerating the edges of the network graph
+    let mut edge = 0;
     
     for line in buffered.lines().map(|ln| ln.unwrap()) {
 
@@ -72,11 +75,12 @@ fn parse_netlist_file(file_path: String) {
 	    group2 = false;
 	}
 	
-	let component = Component::new(&name, other_tokens, group2);
+	let component = Component::new(&name, other_tokens, group2, edge);
 	println!("{:?}", component);
-	
+
 	mna.add_element_stamp(component);
-	
+
+	edge = edge + 1;
     }
 
     println!("{}", mna);
