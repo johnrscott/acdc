@@ -67,6 +67,13 @@ impl Mna {
 	    _ => todo!("Not currently implemented"),
 	}
     }
+
+    pub fn get_system(self) -> (SparseMatrix<f64>, Vec<f64>) {
+	let matrix = self.matrix.get_matrix();
+	let rhs = self.rhs.get_vector();
+	(matrix, rhs)
+    }
+
 }
 
 impl fmt::Display for Mna {
@@ -97,6 +104,8 @@ impl MnaMatrix {
 	}
     }
     pub fn get_matrix(self) -> SparseMatrix<f64> {
+
+	// Make the top row agree on the number of rows
 	let top = concat_horizontal(self.top_left, &self.top_right);
 	let bottom = concat_horizontal(self.bottom_left, &self.bottom_right);
 	concat_vertical(top, &bottom)
@@ -142,7 +151,7 @@ impl MnaMatrix {
 	if n1 == n2 {
 	    panic!("Cannot set symmetric group 2 where n1 == n2");
 	}
-	plus_equals(&mut self.bottom_right, e, e, x2);	
+	plus_equals(&mut self.bottom_right, e, e, y);	
 	if n1 != 0 {
 	    plus_equals(&mut self.top_right, n1 - 1, e, x1);
 	    plus_equals(&mut self.bottom_left, e, n1 - 1, x1);
