@@ -43,8 +43,8 @@ fn parse_netlist_file(file_path: String) {
 
     let mut mna = Mna::new();
 
-    // For enumerating the edges of the network graph
-    let mut edge = 0;
+    // For group 2 elements, index of their current
+    let mut next_free_edge = 0;
     
     for line in buffered.lines().map(|ln| ln.unwrap()) {
 
@@ -67,20 +67,19 @@ fn parse_netlist_file(file_path: String) {
 	let mut other_tokens: Vec<&str> = tokens.collect();
 	
 	// Check if the last element is a group 2 specifier
-	let group2: bool;
+	let current_index;
 	if other_tokens.last().unwrap().to_string() == "G2" {
-	    group2 = true;
+	    current_index = Some(next_free_edge);
 	    other_tokens.pop();
+	    next_free_edge += 1;
 	} else {
-	    group2 = false;
+	    current_index = None;
 	}
 	
-	let component = Component::new(&name, other_tokens, group2, edge);
+	let component = Component::new(&name, other_tokens, current_index);
 	println!("{:?}", component);
 
 	mna.add_element_stamp(component);
-
-	edge = edge + 1;
     }
 
     println!("{}", mna);

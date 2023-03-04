@@ -52,16 +52,15 @@ impl Mna {
     pub fn add_element_stamp(&mut self, component: Component) {
 	match component {
 	    Component::Resistor {
-		edge,
 		term_1,
 		term_2,
+		current_index,
 		resistance: r,
-		group2,
 	    } => {
-		if group2 {
-		    self.matrix.add_symmetric_group2(term_1, term_2, edge, 1.0, -1.0, -r);
-		} else {
-		    self.matrix.add_symmetric_group1(term_1, term_2, 1.0/r, -1.0/r);
+		match current_index {
+		    Some(edge) => self.matrix.add_symmetric_group2(
+			term_1, term_2, edge, 1.0, -1.0, -r),
+		    None => self.matrix.add_symmetric_group1(term_1, term_2, 1.0/r, -1.0/r)
 		}
 		println!("Element stamp for R")
 	    },
