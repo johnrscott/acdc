@@ -1,5 +1,6 @@
 use std::fmt;
 
+use crate::NodeMap;
 
 /// Component type
 ///
@@ -36,7 +37,6 @@ pub enum Component {
     },
 }
 
-
 fn get_current_index(tokens: &mut Vec<&str>, next_free_edge: &mut usize) -> Option<usize> {
     // Check if the last element is a group 2 specifier
     let current_index;
@@ -52,7 +52,8 @@ fn get_current_index(tokens: &mut Vec<&str>, next_free_edge: &mut usize) -> Opti
 
 impl Component {
 
-    fn new_resistor(mut tokens: Vec<&str>, next_free_current_index: &mut usize) -> Self {
+    fn new_resistor(mut tokens: Vec<&str>, next_free_current_index: &mut usize,
+		    node_map: &mut NodeMap) -> Self {
 
 	// Check for current_index
 	let current_index = get_current_index(&mut tokens, next_free_current_index);
@@ -60,8 +61,9 @@ impl Component {
 	if tokens.len() != 3 {
 	    panic!("Expected three tokens for Resistor")
 	}
-	let term_1 = tokens[0].parse().expect("Failed to parse positive terminal");
-	let term_2 = tokens[1].parse().expect("Failed to parse negative terminal");
+	
+	let term_1 = node_map.allocate_index(tokens[0]);
+	let term_2 = node_map.allocate_index(tokens[1]);
 	let resistance = tokens[2].parse().expect("Failed to parse resistance value");
 	
 	Self::Resistor {
@@ -72,7 +74,8 @@ impl Component {
 	}
     }
 
-    fn new_independent_voltage_source(tokens: Vec<&str>, next_free_current_index: &mut usize) -> Self {
+    fn new_independent_voltage_source(tokens: Vec<&str>, next_free_current_index: &mut usize,
+				      node_map: &mut NodeMap) -> Self {
 
 	if tokens.len() != 3 {
 	    panic!("Expected three tokens for independent voltage source")
@@ -81,8 +84,8 @@ impl Component {
 	let current_index = *next_free_current_index;
 	*next_free_current_index += 1;
 	
-	let term_pos = tokens[0].parse().expect("Failed to parse positive terminal");
-	let term_neg = tokens[1].parse().expect("Failed to parse negative terminal");
+	let term_pos = node_map.allocate_index(tokens[0]);
+	let term_neg = node_map.allocate_index(tokens[1]);
 	let voltage = tokens[2].parse().expect("Failed to parse resistance value");
 	
 	Self::IndependentVoltageSource {
@@ -93,10 +96,11 @@ impl Component {
 	}
     }
     
-    pub fn new(name: &str, tokens: Vec<&str>, next_free_edge: &mut usize) -> Self {
+    pub fn new(name: &str, tokens: Vec<&str>, next_free_edge: &mut usize,
+	       node_map: &mut NodeMap) -> Self {
 	match name {
-	    "r" => Self::new_resistor(tokens, next_free_edge),
-	    "v" => Self::new_independent_voltage_source(tokens, next_free_edge),
+	    "r" => Self::new_resistor(tokens, next_free_edge, node_map),
+	    "v" => Self::new_independent_voltage_source(tokens, next_free_edge, node_map),
 	    &_ => todo!("Not yet implemented component"),
 	}
     }

@@ -39,11 +39,56 @@ struct Instance {
     current: Option<f64>,
 }
 
+/// Map from node indices to netlist
+/// node names
+#[derive(Debug)]
+pub struct NodeMap {
+    index_to_name: Vec<String>,
+}
+
+impl NodeMap {
+    /// Make an empty node map
+    fn new() -> Self {
+	Self {
+	    index_to_name: vec![String::from("")],
+	}
+    }
+    
+    fn add_ground_node(&mut self, ground_name: &str) {
+	if self.index_to_name[0] == "" {
+	    // If no ground node has been encountered yet,
+	    // store it here
+	    self.index_to_name[0] = String::from(ground_name);
+	} else {
+	    // Else, check the ground name agrees with the
+	    // previously used name
+	    if self.index_to_name[0] != ground_name {
+		panic!("Ground node name mismatch: expected {}, found {}",
+		       self.index_to_name[0], ground_name);
+	    }
+	}
+    }
+    
+    fn allocate_index(&mut self, node_name: &str) -> usize {
+	let re = Regex::new(r"(gnd|GND|0)").unwrap();
+	if re.is_match(node_name) {	    
+	    self.add_ground_node(node_name);
+	    0
+	} else {
+	    self.index_to_name.push(String::from(node_name));
+	    self.index_to_name.len()
+	}
+    }
+
+    fn get_node_name(&self, index: usize) -> &String {
+	&self.index_to_name[index]
+    }
+}
 
 /// Returns (instances, mna system)
 fn parse_netlist_file(
     file_path: String
-) -> (Vec<Instance>, Mna) {
+) -> (Vec<Instance>, Mna, NodeMap) {
     
     let input = File::open(&file_path).unwrap_or_else(|error| {
 	panic!("Could not open file {file_path} ({})", error.kind());
@@ -57,6 +102,7 @@ fn parse_netlist_file(
     let mut next_free_edge = 0;
 
     let mut instances = Vec::new();
+    let mut node_map = NodeMap::new();
     
     for line in buffered.lines().map(|ln| ln.unwrap()) {
 
@@ -77,7 +123,7 @@ fn parse_netlist_file(
 
 	// Collect the other argument
 	let mut other_tokens: Vec<&str> = tokens.collect();		
-	let component = Component::new(&name, other_tokens, &mut next_free_edge);
+	let component = Component::new(&name, other_tokens, &mut next_free_edge, &mut node_map);
 
 	mna.add_element_stamp(&component);
 
@@ -88,7 +134,7 @@ fn parse_netlist_file(
 	});
     }
 
-    (instances, mna)
+    (instances, mna, node_map)
 }
 
 fn main() {
@@ -100,9 +146,13 @@ fn main() {
     }
     let file_path = args[1].to_string();
 
-    let (mut instances, mut mna) = parse_netlist_file(file_path);
+    let (mut instances, mut mna, mut node_map)
+	= parse_netlist_file(file_path);
 
     println!("{}", mna);
+    println!("{:?}", node_map);
+    
+
     
     let num_nodes = mna.num_voltage_nodes();
 	
