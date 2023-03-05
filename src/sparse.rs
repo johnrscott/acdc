@@ -52,6 +52,7 @@ pub fn solve(a: SparseMatrix<f64>, b: Vec<f64>) -> Vec<f64> {
 	panic!("Cannot solve system; incompatible dimensions");
     }
     let a = a.compressed_column_format();
+    a.print("a");
     let b = DenseMatrix::from_vectors(b.len(), 1, b);
     let system = SimpleSystem {
 	a,

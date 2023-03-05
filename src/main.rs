@@ -108,7 +108,12 @@ fn main() {
 	
     let (matrix, rhs) = mna.get_system();
 
+    
     println!("{}", matrix);
+
+    matrix.print_structure();
+    
+    println!("RHS: {:?}", rhs);
     
     let x = solve(matrix, rhs);
     println!();

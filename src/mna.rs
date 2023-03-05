@@ -99,6 +99,7 @@ impl MnaMatrix {
 	if n1 == n2 {
 	    panic!("Cannot set symmetric group 2 where n1 == n2");
 	}
+	println!("HEREH {e}");
 	let max_n = cmp::max(n1, n2);
 	self.top_dim = cmp::max(self.top_dim, max_n);
 	self.bottom_dim = cmp::max(self.bottom_dim, e + 1);
@@ -205,6 +206,7 @@ impl Mna {
 		current_index,
 		resistance: r,
 	    } => {
+		println!("Adding volt stamp: {term_1}, {term_1}, {:?}", current_index);
 		match current_index {
 		    Some(edge) => self.matrix.add_symmetric_group2(
 			*term_1, *term_2, *edge, 1.0, -1.0, -*r),
@@ -217,6 +219,7 @@ impl Mna {
 		current_index,
 		voltage: v,
 	    } => {
+		println!("Adding volt stamp: {term_pos}, {term_neg}, {current_index}");
 		self.matrix.add_symmetric_group2(*term_pos, *term_neg, *current_index, 1.0, -1.0, 0.0);
 		self.rhs.add_rhs_stamp(*current_index, *v);
 	    },
