@@ -50,24 +50,28 @@ impl MnaMatrix {
     
     pub fn get_matrix(mut self) -> SparseMatrix<f64> {
 
-	self.top_left.resize(self.num_voltage_nodes, self.num_voltage_nodes);	
+	self.top_left.resize(self.num_voltage_nodes, self.num_voltage_nodes);
 	self.bottom_right.resize(self.num_current_edges, self.num_current_edges);
 	self.top_right.resize(self.num_voltage_nodes, self.num_current_edges);	
-	self.bottom_right.resize(self.num_current_edges, self.num_voltage_nodes);
-	
+	self.bottom_left.resize(self.num_current_edges, self.num_voltage_nodes);
+
 	let top = concat_horizontal(self.top_left, &self.top_right);
 	let bottom = concat_horizontal(self.bottom_left, &self.bottom_right);
 	concat_vertical(top, &bottom)
     }
 
-    /// Increase the number of voltage nodes if n is not already included
+    /// Increase the number of voltage nodes if n is not already included. Note
+    /// that this function uses the netlist value of n (i.e. the matrix index is
+    /// n-1). 
     fn update_num_voltage_nodes(&mut self, n: usize) {
 	self.num_voltage_nodes = cmp::max(self.num_voltage_nodes, n);
     }
 
-    /// Increase the number of current edges if e is not already included
+    /// Increase the number of current edges if e is not already included. Note that
+    /// e is the actual index into the matrix, so the number of rows will be resized
+    /// to e+1
     fn update_num_current_edges(&mut self, e: usize) {
-	self.num_current_edges = cmp::max(self.num_current_edges, e);
+	self.num_current_edges = cmp::max(self.num_current_edges, e + 1);
     }
 
     /// Add a block of symmetric values to the top-left matrix.

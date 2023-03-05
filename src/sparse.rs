@@ -22,10 +22,11 @@ pub fn concat_horizontal(
     if a.num_rows() != b.num_rows() {
 	panic!("Cannot concatenate matrices horizontally with different numbers of rows");
     }
-    let offset = a.num_cols();
+    let a_cols = a.num_cols();
     for ((row, col), value) in b.values().iter() {
-	a.set_value(*row, offset + *col, *value);
+	a.set_value(*row, a_cols + *col, *value);
     }
+    a.resize_cols(a_cols + b.num_cols());
     a
 }
 
@@ -34,12 +35,14 @@ pub fn concat_vertical(
     b: &SparseMatrix<f64>,
 ) -> SparseMatrix<f64> {
     if a.num_cols() != b.num_cols() {
-	panic!("Cannot concatenate matrices vertically with different numbers of columns");
+	panic!("Cannot concatenate matrices vertically with different numbers of columns {} and {}",
+	       a.num_cols(), b.num_cols());
     }
-    let offset = a.num_rows();
+    let a_rows = a.num_rows();
     for ((row, col), value) in b.values().iter() {
-	a.set_value(offset + *row, *col, *value);
+	a.set_value(a_rows + *row, *col, *value);
     }
+    a.resize_rows(a_rows + b.num_rows());
     a
 }
 
