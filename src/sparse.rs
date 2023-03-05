@@ -1,4 +1,4 @@
-use csuperlu::{sparse_matrix::SparseMatrix, c::{options::ColumnPermPolicy, stat::CSuperluStat}, dense::DenseMatrix, simple_driver::SimpleSystem};
+use csuperlu::{sparse_matrix::SparseMatrix, c::{options::ColumnPermPolicy, stat::CSuperluStat}, dense::DenseMatrix, simple_driver::{SimpleSystem, SimpleResult}};
 
 pub fn transpose(mut a: SparseMatrix<f64>) -> SparseMatrix<f64> {
     // This does not modify in place yet -- todo
@@ -66,7 +66,13 @@ pub fn solve(a: SparseMatrix<f64>, b: Vec<f64>) -> Vec<f64> {
 	b,
     };
     let mut stat = CSuperluStat::new();
-    let mut solution = system.solve(&mut stat, ColumnPermPolicy::ColAMD)
-	.expect("Failed to solve system");
-    solution.x.column_major_values().to_vec()
+    let mut x = match system.solve(&mut stat, ColumnPermPolicy::ColAMD) {
+	SimpleResult::Solution { x, .. } => x,
+	SimpleResult::SingularFactorisation { singular_column, .. } =>
+	    panic!("Matrix is singular at column {singular_column}"),
+	SimpleResult::Err(error) =>
+	    panic!("Error occured while solving linear system: {:?}", error),
+    };
+
+    x.column_major_values().to_vec()
 }

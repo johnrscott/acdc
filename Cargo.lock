@@ -132,7 +132,7 @@ dependencies = [
 [[package]]
 name = "csuperlu"
 version = "0.1.0"
-source = "git+https://github.com/lanamineh/csuperlu#d02512dd0000346f4d3f5a137caf73e4849d3efa"
+source = "git+https://github.com/lanamineh/csuperlu#ffa6f0e6e0cb9c2f01a215e574935dc9d08b0ce3"
 dependencies = [
  "csuperlu_sys",
  "itertools",

@@ -3,7 +3,7 @@ use std::cmp;
 
 use csuperlu::sparse_matrix::SparseMatrix;
 
-use crate::{sparse::{concat_horizontal, concat_vertical, solve}, component::Component};
+use crate::{sparse::{concat_horizontal, concat_vertical}, component::Component};
 
 /// Matrix for modified nodal analysis
 ///
