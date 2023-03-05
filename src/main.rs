@@ -104,7 +104,7 @@ fn main() {
 
     println!("{}", mna);
     
-    let num_nodes = mna.num_nodes();
+    let num_nodes = mna.num_voltage_nodes();
 	
     let (matrix, rhs) = mna.get_system();
 

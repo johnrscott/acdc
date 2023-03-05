@@ -19,9 +19,9 @@ use crate::{sparse::{concat_horizontal, concat_vertical, solve}, component::Comp
 ///
 pub struct MnaMatrix{
     /// The number of rows in the top matrices
-    top_dim: usize,
+    num_voltage_nodes: usize,
     /// The number of rows in the bottom matrices
-    bottom_dim: usize,
+    num_current_edges: usize,
     top_left: SparseMatrix<f64>,
     top_right: SparseMatrix<f64>,
     bottom_left: SparseMatrix<f64>,
@@ -31,8 +31,8 @@ pub struct MnaMatrix{
 impl MnaMatrix {
     pub fn new() -> Self {
 	Self {
-	    top_dim: 0,
-	    bottom_dim: 0,
+	    num_voltage_nodes: 0,
+	    num_current_edges: 0,
 	    top_left: SparseMatrix::new(),
 	    top_right: SparseMatrix::new(),
 	    bottom_left: SparseMatrix::new(),
@@ -40,21 +40,34 @@ impl MnaMatrix {
 	}
     }
 
-    pub fn top_dim(&self) -> usize {
-	self.top_dim
+    pub fn num_voltage_nodes(&self) -> usize {
+	self.num_voltage_nodes
     }
 
-    pub fn bottom_dim(&self) -> usize {
-	self.bottom_dim
+    pub fn num_current_edges(&self) -> usize {
+	self.num_current_edges
     }
     
-    pub fn get_matrix(self) -> SparseMatrix<f64> {
-	let h_pad = self.top_dim - self.top_left.num_cols();
-	let top = concat_horizontal(self.top_left, &self.top_right, h_pad);
-	let v_pad = self.top_dim - top.num_rows();
-	let bottom = concat_horizontal(self.bottom_left, &self.bottom_right,
-				       h_pad);
-	concat_vertical(top, &bottom, v_pad)
+    pub fn get_matrix(mut self) -> SparseMatrix<f64> {
+
+	self.top_left.resize(self.num_voltage_nodes, self.num_voltage_nodes);	
+	self.bottom_right.resize(self.num_current_edges, self.num_current_edges);
+	self.top_right.resize(self.num_voltage_nodes, self.num_current_edges);	
+	self.bottom_right.resize(self.num_current_edges, self.num_voltage_nodes);
+	
+	let top = concat_horizontal(self.top_left, &self.top_right);
+	let bottom = concat_horizontal(self.bottom_left, &self.bottom_right);
+	concat_vertical(top, &bottom)
+    }
+
+    /// Increase the number of voltage nodes if n is not already included
+    fn update_num_voltage_nodes(&mut self, n: usize) {
+	self.num_voltage_nodes = cmp::max(self.num_voltage_nodes, n);
+    }
+
+    /// Increase the number of current edges if e is not already included
+    fn update_num_current_edges(&mut self, e: usize) {
+	self.num_current_edges = cmp::max(self.num_current_edges, e);
     }
 
     /// Add a block of symmetric values to the top-left matrix.
@@ -70,8 +83,8 @@ impl MnaMatrix {
 	if n1 == n2 {
 	    panic!("Cannot set symmetric group 1 where n1 == n2");
 	}
-	let max_n = cmp::max(n1, n2);
-	self.top_dim = cmp::max(self.top_dim, max_n);
+	self.update_num_voltage_nodes(n1);
+	self.update_num_voltage_nodes(n2);
 	if n1 == 0 {
 	    plus_equals(&mut self.top_left, n2 - 1, n2 - 1, x1);
 	} else if n2 == 0 {
@@ -99,10 +112,9 @@ impl MnaMatrix {
 	if n1 == n2 {
 	    panic!("Cannot set symmetric group 2 where n1 == n2");
 	}
-	println!("HEREH {e}");
-	let max_n = cmp::max(n1, n2);
-	self.top_dim = cmp::max(self.top_dim, max_n);
-	self.bottom_dim = cmp::max(self.bottom_dim, e + 1);
+	self.update_num_voltage_nodes(n1);
+	self.update_num_voltage_nodes(n2);
+	self.update_num_current_edges(e);
 	plus_equals(&mut self.bottom_right, e, e, y);	
 	if n1 != 0 {
 	    plus_equals(&mut self.top_right, n1 - 1, e, x1);
@@ -140,7 +152,8 @@ fn plus_equals(mat: &mut SparseMatrix<f64>, row: usize, col: usize, val: f64) {
 
 impl fmt::Display for MnaMatrix {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-	writeln!(f, "Top dim = {}, bottom dim = {}", self.top_dim, self.bottom_dim)?;
+	writeln!(f, "Num voltage nodes = {}, Num current edges = {}",
+		 self.num_voltage_nodes, self.num_current_edges)?;
 	writeln!(f, "Top left:")?;
 	writeln!(f, "{}", self.top_left)?;
 	writeln!(f, "Top right:")?;
@@ -160,13 +173,13 @@ impl MnaRhs {
 	}
     }
     
-    pub fn get_vector(self, top_dim: usize, bottom_dim: usize) -> Vec<f64> {
-	let mut out = vec![0.0; top_dim + bottom_dim];
+    pub fn get_vector(self, num_voltage_nodes: usize, num_current_edges: usize) -> Vec<f64> {
+	let mut out = vec![0.0; num_voltage_nodes + num_current_edges];
 	for ((row, _), value) in self.top.values().iter() {
 	    out[*row] = *value;
 	}
 	for ((row, _), value) in self.bottom.values().iter() {
-	    out[top_dim + *row] = *value;
+	    out[num_voltage_nodes + *row] = *value;
 	}
 	out
     }
@@ -190,12 +203,12 @@ impl Mna {
 	}
     }
 
-    pub fn num_nodes(&self) -> usize {
-	self.matrix.top_dim()
+    pub fn num_voltage_nodes(&self) -> usize {
+	self.matrix.num_voltage_nodes()
     }
 
-    pub fn num_currents(&self) -> usize {
-	self.matrix.bottom_dim()
+    pub fn num_current_edges(&self) -> usize {
+	self.matrix.num_current_edges()
     }
     
     pub fn add_element_stamp(&mut self, component: &Component) {
@@ -229,10 +242,10 @@ impl Mna {
 
     /// Return (matrix, rhs)
     pub fn get_system(self) -> (SparseMatrix<f64>, Vec<f64>) {
-	let top_dim = self.matrix.top_dim();
-	let bottom_dim = self.matrix.bottom_dim();
+	let num_voltage_nodes = self.matrix.num_voltage_nodes();
+	let num_current_edges = self.matrix.num_current_edges();
 	let matrix = self.matrix.get_matrix();
-	let rhs = self.rhs.get_vector(top_dim, bottom_dim);
+	let rhs = self.rhs.get_vector(num_voltage_nodes, num_current_edges);
 	(matrix, rhs)
     }
 }
