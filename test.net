@@ -6,6 +6,9 @@ R1 1 0 1 G2
 R1 2 1 1
 I1 2 0 1 G2
 
+R2 a b 1
+E1 a b 2 0 0.5
+
 # R1 n1 gnd 1 G2
 # R1 n2 n1 1
 # R1 x3 n2 1 G2

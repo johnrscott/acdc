@@ -35,6 +35,15 @@ pub enum Component {
         current_index: usize,
         voltage: f64,
     },
+    /// Voltage-controlled voltage source (group2)
+    VoltageControlledVoltageSource {
+        term_pos: usize,
+        term_neg: usize,
+        ctrl_pos: usize,
+        ctrl_neg: usize,
+        current_index: usize,
+        voltage_scale: f64,
+    },
     /// Independent voltage source (group1 or group2)
     IndependentCurrentSource {
         term_pos: usize,
@@ -105,7 +114,36 @@ impl Component {
             voltage,
         }
     }
+    
+    fn new_voltage_controlled_voltage_source(
+	tokens: Vec<&str>,
+	next_free_current_index: &mut usize,
+	node_map: &mut NodeMap,
+    ) -> Self {
+	if tokens.len() != 5 {
+            panic!("Expected five tokens for VCVS")
+        }
+	
+        let current_index = *next_free_current_index;
+        *next_free_current_index += 1;
 
+        let term_pos = node_map.allocate_index(tokens[0]);
+        let term_neg = node_map.allocate_index(tokens[1]);
+        let ctrl_pos = node_map.allocate_index(tokens[2]);
+        let ctrl_neg = node_map.allocate_index(tokens[3]);
+        let voltage_scale = tokens[4].parse()
+	    .expect("Failed to parse resistance value");
+
+        Self::VoltageControlledVoltageSource {
+            term_pos,
+            term_neg,
+	    ctrl_pos,
+	    ctrl_neg,
+	    current_index,
+            voltage_scale,
+        }
+    }
+    
     fn new_independent_current_source(
         mut tokens: Vec<&str>,
         next_free_current_index: &mut usize,
@@ -140,6 +178,7 @@ impl Component {
         match name {
             "r" => Self::new_resistor(tokens, next_free_edge, node_map),
             "v" => Self::new_independent_voltage_source(tokens, next_free_edge, node_map),
+            "e" => Self::new_voltage_controlled_voltage_source(tokens, next_free_edge, node_map),
 	    "i" => Self::new_independent_current_source(tokens, next_free_edge, node_map),
             &_ => todo!("Not yet implemented component"),
         }
@@ -149,7 +188,8 @@ impl Component {
     pub fn current_index(&self) -> Option<usize> {
         match self {
             Self::IndependentVoltageSource { current_index, .. } => Some(*current_index),
-            Self::Resistor { current_index, .. } => *current_index,
+	    Self::VoltageControlledVoltageSource { current_index, .. } => Some(*current_index),
+	    Self::Resistor { current_index, .. } => *current_index,
 	    Self::IndependentCurrentSource { current_index, .. } => *current_index,
         }
     }
@@ -170,6 +210,14 @@ impl fmt::Display for Component {
                 voltage,
                 ..
             } => write!(f, "{term_pos}(+) --- V({voltage} V) ---- {term_neg}")?,
+            Self::VoltageControlledVoltageSource {
+                term_pos,
+                term_neg,
+		ctrl_pos,
+		ctrl_neg,
+                voltage_scale,
+                ..
+            } => write!(f, "{term_pos}(+) --- V({voltage_scale} x U V) ---- {term_neg}  <--- {ctrl_pos}(+) --- V(U V) ---- {ctrl_neg}")?,
             Self::IndependentCurrentSource {
                 term_pos,
                 term_neg,

@@ -143,7 +143,7 @@ impl MnaMatrix {
 
     /// Same as symmetric version, but only adds values to the
     /// right-hand portion of the matrix (top and bottom)
-    pub fn add_unsymmetric_group2(
+    pub fn add_unsymmetric_right_group2(
         &mut self,
         n1: usize,
         n2: usize,
@@ -153,7 +153,7 @@ impl MnaMatrix {
         y: f64,
     ) {
         if n1 == n2 {
-            panic!("Cannot set unsymmetric group 2 where n1 == n2");
+            panic!("Cannot set unsymmetric group (right) 2 where n1 == n2");
         }
         self.update_num_voltage_nodes(n1);
         self.update_num_voltage_nodes(n2);
@@ -167,7 +167,31 @@ impl MnaMatrix {
         }
     }
 
-
+    /// Same as symmetric version, but only adds values to the
+    /// bottom portion of the matrix (left and right)
+    pub fn add_unsymmetric_bottom_group2(
+        &mut self,
+        n1: usize,
+        n2: usize,
+        e: usize,
+        x1: f64,
+        x2: f64,
+        y: f64,
+    ) {
+        if n1 == n2 {
+            panic!("Cannot set unsymmetric group (bottom) 2 where n1 == n2");
+        }
+        self.update_num_voltage_nodes(n1);
+        self.update_num_voltage_nodes(n2);
+        self.update_num_current_edges(e);
+        plus_equals(&mut self.bottom_right, e, e, y);
+        if n1 != 0 {
+            plus_equals(&mut self.bottom_left, n1 - 1, e, x1);
+        }
+        if n2 != 0 {
+            plus_equals(&mut self.bottom_left, n2 - 1, e, x2);
+        }
+    }
 }
 
 /// Modified nodal analysis right-hand side
@@ -297,6 +321,31 @@ impl Mna {
                 );
                 self.rhs.add_rhs_group2(*current_index, *v);
             },
+            Component::VoltageControlledVoltageSource {
+                term_pos,
+                term_neg,
+		ctrl_pos,
+		ctrl_neg,
+                current_index,
+                voltage_scale: k,
+            } => {
+                self.matrix.add_symmetric_group2(
+                    *term_pos,
+                    *term_neg,
+                    *current_index,
+                    1.0,
+                    -1.0,
+                    0.0,
+                );
+		self.matrix.add_unsymmetric_bottom_group2(
+		    *ctrl_pos,
+		    *ctrl_neg,
+		    *current_index,
+		    -*k,
+		    *k,
+		    0.0,
+		);
+            },
 	    Component::IndependentCurrentSource {
                 term_pos,
                 term_neg,
@@ -305,8 +354,9 @@ impl Mna {
             } => {
                 match current_index {
                     Some(edge) => {
-			self.matrix.add_unsymmetric_group2(*term_pos, *term_neg, *edge,
-							   1.0, -1.0, 1.0);
+			self.matrix.add_unsymmetric_right_group2(
+			    *term_pos, *term_neg, *edge,
+			    1.0, -1.0, 1.0);
 			self.rhs.add_rhs_group2(*edge, *i);
 		    },
                     None => {
