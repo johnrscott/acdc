@@ -74,6 +74,9 @@ impl NodeMap {
 	if re.is_match(node_name) {	    
 	    self.add_ground_node(node_name);
 	    0
+	} else if let Some(result)
+	    = self.index_to_name.iter().position(|s| s == node_name ) {
+	    result
 	} else {
 	    self.index_to_name.push(String::from(node_name));
 	    self.index_to_name.len()
