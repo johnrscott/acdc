@@ -306,7 +306,8 @@ impl Mna {
                 match current_index {
                     Some(edge) => {
 			self.matrix.add_unsymmetric_group2(*term_pos, *term_neg, *edge,
-							   1.0, -1.0, 1.0) 
+							   1.0, -1.0, 1.0);
+			self.rhs.add_rhs_group2(*edge, *i);
 		    },
                     None => {
 			self.rhs.add_rhs_group1(*term_pos, -*i);
