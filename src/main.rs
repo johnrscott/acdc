@@ -68,18 +68,19 @@ impl NodeMap {
 	    }
 	}
     }
-    
+
+    /// Assign a terminal string to a new index, or return the index
+    /// if it was already assigned.
     fn allocate_index(&mut self, node_name: &str) -> usize {
 	let re = Regex::new(r"(gnd|GND|0)").unwrap();
 	if re.is_match(node_name) {	    
 	    self.add_ground_node(node_name);
 	    0
-	} else if let Some(result)
-	    = self.index_to_name.iter().position(|s| s == node_name ) {
+	} else if let Some(result) = self.index_to_name.iter().position(|s| s == node_name ) {
 	    result
 	} else {
 	    self.index_to_name.push(String::from(node_name));
-	    self.index_to_name.len()
+	    self.index_to_name.len() - 1
 	}
     }
 
@@ -154,7 +155,7 @@ fn main() {
 
     println!("{}", mna);
     println!("{:?}", node_map);
-    
+    println!("{:?}", instances);
 
     
     let num_nodes = mna.num_voltage_nodes();
