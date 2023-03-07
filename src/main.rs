@@ -203,6 +203,6 @@ fn main() {
     println! {"Node voltages:"};
     println!("(0: 0 V)");
     for n in 0..voltages.len() {
-        println!("{}: {} V", n + 1, voltages[n]);
+        println!("{}: {} V", node_map.get_node_name(n+1), voltages[n]);
     }
 }

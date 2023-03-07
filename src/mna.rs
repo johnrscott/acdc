@@ -192,6 +192,19 @@ impl MnaMatrix {
             plus_equals(&mut self.bottom_left, e, n2 - 1, x2);
         }
     }
+
+    /// Add a single value in the group2 (current-current, bottom-right) portion
+    /// of the matrix
+    pub fn add_group2_value(
+        &mut self,
+        e1: usize,
+        e2: usize,
+        y: f64,
+    ) {
+        self.update_num_current_edges(e1);
+        self.update_num_current_edges(e2);
+        plus_equals(&mut self.bottom_right, e1, e2, y);
+    }
 }
 
 /// Modified nodal analysis right-hand side
@@ -345,6 +358,23 @@ impl Mna {
 		    *k,
 		    0.0,
 		);
+            },
+            Component::CurrentControlledVoltageSource {
+                term_pos,
+                term_neg,
+		ctrl_edge,
+                current_index,
+                voltage_scale: k,
+            } => {
+                self.matrix.add_symmetric_group2(
+                    *term_pos,
+                    *term_neg,
+                    *current_index,
+                    1.0,
+                    -1.0,
+                    0.0,
+                );
+		self.matrix.add_group2_value(*current_index, *ctrl_edge, -*k);
             },
 	    Component::IndependentCurrentSource {
                 term_pos,

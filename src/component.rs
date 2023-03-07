@@ -158,14 +158,14 @@ impl Component {
 	tokens: Vec<&str>,
 	node_map: &mut NodeMap,
     ) -> Self {
-	if tokens.len() != 5 {
+	if tokens.len() != 4 {
             panic!("Expected four tokens for CCVS")
         }
 
         let term_pos = node_map.allocate_index(tokens[0]);
         let term_neg = node_map.allocate_index(tokens[1]);
         let ctrl_edge = node_map.allocate_edge(tokens[2]);
-        let voltage_scale = tokens[4].parse()
+        let voltage_scale = tokens[3].parse()
 	    .expect("Failed to parse resistance value");
 
 	let current_index = node_map.allocate_edge(name_id);
@@ -218,6 +218,7 @@ impl Component {
             "r" => Self::new_resistor(name_id, tokens, node_map),
             "v" => Self::new_independent_voltage_source(name_id, tokens, node_map),
             "e" => Self::new_voltage_controlled_voltage_source(name_id, tokens, node_map),
+            "h" => Self::new_current_controlled_voltage_source(name_id, tokens, node_map),
 	    "i" => Self::new_independent_current_source(name_id, tokens, node_map),
             &_ => todo!("Not yet implemented component"),
         }
@@ -275,7 +276,7 @@ pub fn print_component(component: &Component, node_map: &NodeMap) {
 	    ctrl_edge,
             voltage_scale,
             ..
-        } => print!("{}(+) --- V({voltage_scale} x U V) ---- {}  <--- I({})",
+        } => print!("{}(+) --- V({voltage_scale} x I A) ---- {}  <--- I({})",
 		      node_map.get_node_name(*term_pos),
 		      node_map.get_node_name(*term_neg),
 		      node_map.get_edge_name(*ctrl_edge),
