@@ -195,36 +195,48 @@ impl Component {
     }
 }
 
-impl fmt::Display for Component {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::Resistor {
-                term_1,
-                term_2,
-                resistance,
-                ..
-            } => write!(f, "{term_1} ---- R({resistance} Ohm) ---- {term_2}")?,
-            Self::IndependentVoltageSource {
-                term_pos,
-                term_neg,
-                voltage,
-                ..
-            } => write!(f, "{term_pos}(+) --- V({voltage} V) ---- {term_neg}")?,
-            Self::VoltageControlledVoltageSource {
-                term_pos,
-                term_neg,
-		ctrl_pos,
-		ctrl_neg,
-                voltage_scale,
-                ..
-            } => write!(f, "{term_pos}(+) --- V({voltage_scale} x U V) ---- {term_neg}  <--- {ctrl_pos}(+) --- V(U V) ---- {ctrl_neg}")?,
-            Self::IndependentCurrentSource {
-                term_pos,
-                term_neg,
-                current,
-                ..
-            } => write!(f, "{term_pos}(+) --- I({current} A) ---- {term_neg}")?,
-        }
-        Ok(())
+
+pub fn print_component(component: &Component, node_map: &NodeMap) {
+    match component {
+        Component::Resistor {
+            term_1,
+            term_2,
+            resistance,
+            ..
+        } => print!("{} ---- R({resistance} Ohm) ---- {}",
+		     node_map.get_node_name(*term_1),
+		     node_map.get_node_name(*term_2)
+	    ),
+        Component::IndependentVoltageSource {
+            term_pos,
+            term_neg,
+            voltage,
+            ..
+        } => print!("{}(+) --- V({voltage} V) ---- {}",
+		      node_map.get_node_name(*term_pos),
+		      node_map.get_node_name(*term_neg)
+	),
+        Component::VoltageControlledVoltageSource {
+            term_pos,
+            term_neg,
+	    ctrl_pos,
+	    ctrl_neg,
+            voltage_scale,
+            ..
+        } => print!("{}(+) --- V({voltage_scale} x U V) ---- {}  <--- {}(+) --- V(U V) ---- {}",
+		      node_map.get_node_name(*term_pos),
+		      node_map.get_node_name(*term_neg),
+		      node_map.get_node_name(*ctrl_pos),
+		      node_map.get_node_name(*ctrl_neg)
+	),
+        Component::IndependentCurrentSource {
+            term_pos,
+            term_neg,
+            current,
+            ..
+        } => print!("{}(+) --- I({current} A) ---- {}",
+		      node_map.get_node_name(*term_pos),
+		      node_map.get_node_name(*term_neg),
+	),
     }
 }

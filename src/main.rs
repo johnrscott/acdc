@@ -2,7 +2,7 @@ use std::{fs::File, io::BufRead, io::BufReader};
 
 use regex::Regex;
 
-use crate::{component::Component, mna::Mna, sparse::solve};
+use crate::{component::{Component, print_component}, mna::Mna, sparse::solve};
 
 mod component;
 mod mna;
@@ -172,7 +172,8 @@ fn main() {
     // Print the components
     println!("Components:");
     for inst in instances.iter() {
-        print!("{}: {}", inst.name, inst.component);
+        print!("{}: ", inst.name);
+	print_component(&inst.component, &node_map);
         match inst.current {
             Some(current) => println!(" ({} A)", current),
             None => println!(),
