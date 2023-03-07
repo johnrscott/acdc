@@ -44,6 +44,14 @@ pub enum Component {
         current_index: usize,
         voltage_scale: f64,
     },
+    /// Current-controlled voltage source (group2)
+    CurrentControlledVoltageSource {
+        term_pos: usize,
+        term_neg: usize,
+	ctrl_edge: usize,
+        current_index: usize,
+        voltage_scale: f64,
+    },
     /// Independent voltage source (group1 or group2)
     IndependentCurrentSource {
         term_pos: usize,
@@ -53,32 +61,35 @@ pub enum Component {
     },
 }
 
-fn get_current_index(tokens: &mut Vec<&str>, next_free_edge: &mut usize) -> Option<usize> {
+fn in_group2(tokens: &mut Vec<&str>) -> bool {
     // Check if the last element is a group 2 specifier
-    let current_index;
     if tokens.last().unwrap().to_string() == "G2" {
-        current_index = Some(*next_free_edge);
-        tokens.pop();
-        *next_free_edge += 1;
+	tokens.pop();
+	true
     } else {
-        current_index = None;
+	false
     }
-    current_index
 }
 
 impl Component {
     fn new_resistor(
+	name_id: &str,
         mut tokens: Vec<&str>,
-        next_free_current_index: &mut usize,
         node_map: &mut NodeMap,
     ) -> Self {
-        // Check for current_index
-        let current_index = get_current_index(&mut tokens, next_free_current_index);
 
-        if tokens.len() != 3 {
+	// Check for current_index
+	let current_index;
+	if in_group2(&mut tokens) {
+	    current_index = Some(node_map.allocate_edge(name_id));
+	} else {
+	    current_index = None;
+	}
+
+	if tokens.len() != 3 {
             panic!("Expected three tokens for Resistor")
         }
-
+	
         let term_1 = node_map.allocate_index(tokens[0]);
         let term_2 = node_map.allocate_index(tokens[1]);
         let resistance = tokens[2].parse().expect("Failed to parse resistance value");
@@ -92,17 +103,16 @@ impl Component {
     }
 
     fn new_independent_voltage_source(
-        tokens: Vec<&str>,
-        next_free_current_index: &mut usize,
+	name_id: &str,
+	tokens: Vec<&str>,
         node_map: &mut NodeMap,
     ) -> Self {
         if tokens.len() != 3 {
             panic!("Expected three tokens for independent voltage source")
         }
 
-        let current_index = *next_free_current_index;
-        *next_free_current_index += 1;
-
+	let current_index = node_map.allocate_edge(name_id);
+	
         let term_pos = node_map.allocate_index(tokens[0]);
         let term_neg = node_map.allocate_index(tokens[1]);
         let voltage = tokens[2].parse().expect("Failed to parse resistance value");
@@ -116,16 +126,15 @@ impl Component {
     }
     
     fn new_voltage_controlled_voltage_source(
+	name_id: &str,
 	tokens: Vec<&str>,
-	next_free_current_index: &mut usize,
 	node_map: &mut NodeMap,
     ) -> Self {
 	if tokens.len() != 5 {
             panic!("Expected five tokens for VCVS")
         }
 	
-        let current_index = *next_free_current_index;
-        *next_free_current_index += 1;
+       	let current_index = node_map.allocate_edge(name_id);
 
         let term_pos = node_map.allocate_index(tokens[0]);
         let term_neg = node_map.allocate_index(tokens[1]);
@@ -143,15 +152,46 @@ impl Component {
             voltage_scale,
         }
     }
+
+    fn new_current_controlled_voltage_source(
+	name_id: &str,
+	tokens: Vec<&str>,
+	node_map: &mut NodeMap,
+    ) -> Self {
+	if tokens.len() != 5 {
+            panic!("Expected four tokens for CCVS")
+        }
+
+        let term_pos = node_map.allocate_index(tokens[0]);
+        let term_neg = node_map.allocate_index(tokens[1]);
+        let ctrl_edge = node_map.allocate_edge(tokens[2]);
+        let voltage_scale = tokens[4].parse()
+	    .expect("Failed to parse resistance value");
+
+	let current_index = node_map.allocate_edge(name_id);
+	
+        Self::CurrentControlledVoltageSource {
+            term_pos,
+            term_neg,
+	    ctrl_edge,
+	    current_index,
+            voltage_scale,
+        }
+    }
     
     fn new_independent_current_source(
+	name_id: &str,
         mut tokens: Vec<&str>,
-        next_free_current_index: &mut usize,
         node_map: &mut NodeMap,
     ) -> Self {
-        // Check for current_index
-        let current_index = get_current_index(&mut tokens, next_free_current_index);
-
+	// Check for current_index
+	let current_index;
+	if in_group2(&mut tokens) {
+	    current_index = Some(node_map.allocate_edge(name_id));
+	} else {
+	    current_index = None;
+	}
+	
         if tokens.len() != 3 {
             panic!("Expected three tokens for independent current source")
         }
@@ -168,18 +208,17 @@ impl Component {
         }
     }
 
-    
     pub fn new(
         name: &str,
+	name_id: &str,
         tokens: Vec<&str>,
-        next_free_edge: &mut usize,
         node_map: &mut NodeMap,
     ) -> Self {
         match name {
-            "r" => Self::new_resistor(tokens, next_free_edge, node_map),
-            "v" => Self::new_independent_voltage_source(tokens, next_free_edge, node_map),
-            "e" => Self::new_voltage_controlled_voltage_source(tokens, next_free_edge, node_map),
-	    "i" => Self::new_independent_current_source(tokens, next_free_edge, node_map),
+            "r" => Self::new_resistor(name_id, tokens, node_map),
+            "v" => Self::new_independent_voltage_source(name_id, tokens, node_map),
+            "e" => Self::new_voltage_controlled_voltage_source(name_id, tokens, node_map),
+	    "i" => Self::new_independent_current_source(name_id, tokens, node_map),
             &_ => todo!("Not yet implemented component"),
         }
     }
@@ -189,6 +228,7 @@ impl Component {
         match self {
             Self::IndependentVoltageSource { current_index, .. } => Some(*current_index),
 	    Self::VoltageControlledVoltageSource { current_index, .. } => Some(*current_index),
+	    Self::CurrentControlledVoltageSource { current_index, .. } => Some(*current_index),
 	    Self::Resistor { current_index, .. } => *current_index,
 	    Self::IndependentCurrentSource { current_index, .. } => *current_index,
         }
@@ -228,6 +268,17 @@ pub fn print_component(component: &Component, node_map: &NodeMap) {
 		      node_map.get_node_name(*term_neg),
 		      node_map.get_node_name(*ctrl_pos),
 		      node_map.get_node_name(*ctrl_neg)
+	),
+        Component::CurrentControlledVoltageSource {
+            term_pos,
+            term_neg,
+	    ctrl_edge,
+            voltage_scale,
+            ..
+        } => print!("{}(+) --- V({voltage_scale} x U V) ---- {}  <--- I({})",
+		      node_map.get_node_name(*term_pos),
+		      node_map.get_node_name(*term_neg),
+		      node_map.get_edge_name(*ctrl_edge),
 	),
         Component::IndependentCurrentSource {
             term_pos,

@@ -36,7 +36,10 @@ struct Instance {
 /// node names
 #[derive(Debug)]
 pub struct NodeMap {
+    /// Voltage nodes (including ground at position 0)
     index_to_name: Vec<String>,
+    /// Current edge labels
+    edge_to_name: Vec<String>,
 }
 
 impl NodeMap {
@@ -44,6 +47,7 @@ impl NodeMap {
     fn new() -> Self {
         Self {
             index_to_name: vec![String::from("")],
+            edge_to_name: vec![],
         }
     }
 
@@ -79,8 +83,23 @@ impl NodeMap {
         }
     }
 
+    /// Assign a terminal string to a new index, or return the index
+    /// if it was already assigned.
+    fn allocate_edge(&mut self, edge_name: &str) -> usize {
+        if let Some(result) = self.edge_to_name.iter().position(|s| s == edge_name) {
+            result
+        } else {
+            self.edge_to_name.push(String::from(edge_name));
+            self.edge_to_name.len() - 1
+        }
+    }
+    
     fn get_node_name(&self, index: usize) -> &String {
         &self.index_to_name[index]
+    }
+
+    fn get_edge_name(&self, index: usize) -> &String {
+        &self.edge_to_name[index]
     }
 }
 
@@ -118,7 +137,7 @@ fn parse_netlist_file(file_path: String) -> (Vec<Instance>, Mna, NodeMap) {
 
         // Collect the other argument
         let mut other_tokens: Vec<&str> = tokens.collect();
-        let component = Component::new(&name, other_tokens, &mut next_free_edge, &mut node_map);
+        let component = Component::new(&name, &name_id, other_tokens, &mut node_map);
 
         mna.add_element_stamp(&component);
 
