@@ -186,10 +186,10 @@ impl MnaMatrix {
         self.update_num_current_edges(e);
         plus_equals(&mut self.bottom_right, e, e, y);
         if n1 != 0 {
-            plus_equals(&mut self.bottom_left, n1 - 1, e, x1);
+            plus_equals(&mut self.bottom_left, e, n1 - 1, x1);
         }
         if n2 != 0 {
-            plus_equals(&mut self.bottom_left, n2 - 1, e, x2);
+            plus_equals(&mut self.bottom_left, e, n2 - 1, x2);
         }
     }
 }
