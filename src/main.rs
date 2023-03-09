@@ -171,7 +171,7 @@ fn main() {
 
     println!("{}", matrix);
 
-    matrix.print_structure();
+    matrix.print_structure(num_nodes);
 
     println!("RHS: {:?}", rhs);
 

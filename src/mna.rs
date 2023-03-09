@@ -1,7 +1,7 @@
 use std::cmp;
 use std::fmt;
 
-use csuperlu::sparse_matrix::SparseMatrix;
+use csuperlu::sparse_matrix::SparseMat;
 
 use crate::{
     component::Component,
@@ -25,10 +25,10 @@ pub struct MnaMatrix {
     num_voltage_nodes: usize,
     /// The number of rows in the bottom matrices
     num_current_edges: usize,
-    top_left: SparseMatrix<f64>,
-    top_right: SparseMatrix<f64>,
-    bottom_left: SparseMatrix<f64>,
-    bottom_right: SparseMatrix<f64>,
+    top_left: SparseMat<f64>,
+    top_right: SparseMat<f64>,
+    bottom_left: SparseMat<f64>,
+    bottom_right: SparseMat<f64>,
 }
 
 impl MnaMatrix {
@@ -36,10 +36,10 @@ impl MnaMatrix {
         Self {
             num_voltage_nodes: 0,
             num_current_edges: 0,
-            top_left: SparseMatrix::new(),
-            top_right: SparseMatrix::new(),
-            bottom_left: SparseMatrix::new(),
-            bottom_right: SparseMatrix::new(),
+            top_left: SparseMat::empty(),
+            top_right: SparseMat::empty(),
+            bottom_left: SparseMat::empty(),
+            bottom_right: SparseMat::empty(),
         }
     }
 
@@ -51,7 +51,7 @@ impl MnaMatrix {
         self.num_current_edges
     }
 
-    pub fn get_matrix(mut self) -> SparseMatrix<f64> {
+    pub fn get_matrix(mut self) -> SparseMat<f64> {
         self.top_left
             .resize(self.num_voltage_nodes, self.num_voltage_nodes);
         self.bottom_right
@@ -216,18 +216,14 @@ impl MnaMatrix {
 /// |   s2   |
 ///
 pub struct MnaRhs {
-    top: SparseMatrix<f64>,
-    bottom: SparseMatrix<f64>,
+    top: SparseMat<f64>,
+    bottom: SparseMat<f64>,
 }
 
 /// Assumes the matrix is square
-fn plus_equals(mat: &mut SparseMatrix<f64>, row: usize, col: usize, val: f64) {
-    let old_val = if (row < mat.num_rows()) && (col < mat.num_cols()) {
-        mat.get_value(row, col)
-    } else {
-        0.0
-    };
-    mat.set_value(row, col, old_val + val);
+fn plus_equals(mat: &mut SparseMat<f64>, row: usize, col: usize, val: f64) {
+    let old_val = mat.get_unbounded(row, col);
+    mat.insert_unbounded(row, col, old_val + val);
 }
 
 impl fmt::Display for MnaMatrix {
@@ -251,17 +247,17 @@ impl fmt::Display for MnaMatrix {
 impl MnaRhs {
     fn new() -> Self {
         Self {
-            top: SparseMatrix::new(),
-            bottom: SparseMatrix::new(),
+            top: SparseMat::empty(),
+            bottom: SparseMat::empty(),
         }
     }
 
     pub fn get_vector(self, num_voltage_nodes: usize, num_current_edges: usize) -> Vec<f64> {
         let mut out = vec![0.0; num_voltage_nodes + num_current_edges];
-        for ((row, _), value) in self.top.values().iter() {
+        for ((row, _), value) in self.top.non_zero_vals().iter() {
             out[*row] = *value;
         }
-        for ((row, _), value) in self.bottom.values().iter() {
+        for ((row, _), value) in self.bottom.non_zero_vals().iter() {
             out[num_voltage_nodes + *row] = *value;
         }
         out
@@ -270,13 +266,13 @@ impl MnaRhs {
     /// Add a RHS element in the group 1 matrix.
     pub fn add_rhs_group1(&mut self, n: usize, x: f64) {
 	if n != 0 {
-            self.top.set_value(n - 1, 1, x);
+            self.top.insert_unbounded(n - 1, 1, x);
 	}
     }
     
     /// Add a RHS element in the group 2 matrix
     pub fn add_rhs_group2(&mut self, e: usize, x: f64) {
-        self.bottom.set_value(e, 1, x);
+        self.bottom.insert_unbounded(e, 1, x);
     }
 }
 
@@ -400,7 +396,7 @@ impl Mna {
     }
 
     /// Return (matrix, rhs)
-    pub fn get_system(self) -> (SparseMatrix<f64>, Vec<f64>) {
+    pub fn get_system(self) -> (SparseMat<f64>, Vec<f64>) {
         let num_voltage_nodes = self.matrix.num_voltage_nodes();
         let num_current_edges = self.matrix.num_current_edges();
         let matrix = self.matrix.get_matrix();

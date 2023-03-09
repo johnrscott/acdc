@@ -132,7 +132,7 @@ dependencies = [
 [[package]]
 name = "csuperlu"
 version = "0.1.0"
-source = "git+https://github.com/lanamineh/csuperlu#ffa6f0e6e0cb9c2f01a215e574935dc9d08b0ce3"
+source = "git+https://github.com/lanamineh/csuperlu#253cfea63eeab5c36f55f0d5d6a4824fbcaffb84"
 dependencies = [
  "csuperlu_sys",
  "itertools",
@@ -224,9 +224,9 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "libc"
-version = "0.2.139"
+version = "0.2.140"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "201de327520df007757c1f0adce6e827fe8562fbc28bfd9c15571c66ca1f5f79"
+checksum = "99227334921fae1a979cf0bfdfcc6b3e5ce376ef57e16fb6fb3ea2ed6095f80c"
 
 [[package]]
 name = "libloading"
@@ -424,9 +424,9 @@ dependencies = [
 
 [[package]]
 name = "unicode-ident"
-version = "1.0.7"
+version = "1.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "775c11906edafc97bc378816b94585fbd9a054eabaf86fdd0ced94af449efab7"
+checksum = "e5464a87b239f13a63a501f2701565754bae92d243d4bb7eb12f6d57d2269bf4"
 
 [[package]]
 name = "unicode-width"
