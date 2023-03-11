@@ -1,3 +1,9 @@
+use mna::Mna;
+
+mod mna;
+mod sparse;
+
 fn main() {
-    println!("Hello world");
+    let mna = Mna::new();
+    
 }
