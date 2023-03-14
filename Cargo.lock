@@ -413,6 +413,7 @@ dependencies = [
 name = "pyesim"
 version = "0.1.0"
 dependencies = [
+ "esim",
  "pyo3",
 ]
 
