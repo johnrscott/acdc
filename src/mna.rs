@@ -1,5 +1,7 @@
 use csuperlu::sparse_matrix::SparseMat;
 
+use crate::sparse::solve;
+
 use self::{mna_matrix::MnaMatrix, mna_rhs::MnaRhs};
 
 mod mna_matrix;
@@ -18,6 +20,7 @@ impl Mna {
         }
     }
 
+    /// The number of non-ground voltage nodes
     pub fn num_voltage_nodes(&self) -> usize {
         self.matrix.num_voltage_nodes()
     }
@@ -25,41 +28,47 @@ impl Mna {
     pub fn num_current_edges(&self) -> usize {
         self.matrix.num_current_edges()
     }
+    
+    pub fn add_resistor(
+	&mut self,
+	term_1: usize,
+	term_2: usize,
+	current_edge: Option<usize>,
+	resistance: f64,
+    ) {
+	let r = resistance;
+        match current_edge {
+            Some(e) => self
+                .matrix
+                .add_symmetric_group2(term_1, term_2, e, 1.0, -1.0, -r),
+            None => self
+                .matrix
+                .add_symmetric_group1(term_1, term_2, 1.0 / r, -1.0 / r),
+        };
+    }
 
+    pub fn add_independent_voltage_source(
+	&mut self,
+	term_pos: usize,
+	term_neg: usize,
+	current_edge: usize,
+	voltage: f64,
+    ) {
+	let v = voltage;
+        self.matrix.add_symmetric_group2(
+            term_pos,
+            term_neg,
+            current_edge,
+            1.0,
+            -1.0,
+            0.0,
+        );
+        self.rhs.add_rhs_group2(current_edge, v);
+    }
+    
     /* Unclean!
     pub fn add_element_stamp(&mut self, component: &Component) {
         match component {
-            Component::Resistor {
-                term_1,
-                term_2,
-                current_index,
-                resistance: r,
-            } => {
-                match current_index {
-                    Some(edge) => self
-                        .matrix
-                        .add_symmetric_group2(*term_1, *term_2, *edge, 1.0, -1.0, -*r),
-                    None => self
-                        .matrix
-                        .add_symmetric_group1(*term_1, *term_2, 1.0 / r, -1.0 / r),
-                }
-            },
-            Component::IndependentVoltageSource {
-                term_pos,
-                term_neg,
-                current_index,
-                voltage: v,
-            } => {
-                self.matrix.add_symmetric_group2(
-                    *term_pos,
-                    *term_neg,
-                    *current_index,
-                    1.0,
-                    -1.0,
-                    0.0,
-                );
-                self.rhs.add_rhs_group2(*current_index, *v);
-            },
             Component::VoltageControlledVoltageSource {
                 term_pos,
                 term_neg,
@@ -126,12 +135,17 @@ impl Mna {
     }
      */
 
-    /// Return (matrix, rhs)
-    pub fn get_system(self) -> (SparseMat<f64>, Vec<f64>) {
+    /// Returns node voltages, edge currents
+    pub fn solve(self) -> (Vec<f64>, Vec<f64>) {
         let num_voltage_nodes = self.matrix.num_voltage_nodes();
         let num_current_edges = self.matrix.num_current_edges();
         let matrix = self.matrix.get_matrix();
         let rhs = self.rhs.get_vector(num_voltage_nodes, num_current_edges);
-        (matrix, rhs)
+
+	let mut solution = solve(matrix, rhs);
+	let currents: Vec<_> = solution.drain(num_voltage_nodes..)
+	    .collect();
+	// Solution now contains the voltages
+	(solution, currents)
     }
 }

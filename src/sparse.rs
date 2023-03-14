@@ -44,14 +44,6 @@ pub fn concat_vertical(mut a: SparseMat<f64>, b: &SparseMat<f64>) -> SparseMat<f
     a
 }
 
-pub fn neg(mat: SparseMat<f64>) -> SparseMat<f64> {
-    let mut new_mat = SparseMat::<f64>::empty();
-    for ((row, col), value) in mat.non_zero_vals().iter() {
-        new_mat.insert_unbounded(*row, *col, *value);
-    }
-    new_mat
-}
-
 pub fn solve(a: SparseMat<f64>, b: Vec<f64>) -> Vec<f64> {
     if a.num_rows() != b.len() {
         panic!("Cannot solve system; incompatible dimensions");
