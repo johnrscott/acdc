@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 
 #[pyclass]
 struct LinearDcAnalysis {
-    dc: dc::LinearDcAnalysis<f64>,
+    dc: Option<dc::LinearDcAnalysis<f64>>,
 }
 
 #[pymethods]
@@ -11,7 +11,7 @@ impl LinearDcAnalysis {
     #[new]
     fn new() -> Self {
         Self {
-	    dc: dc::LinearDcAnalysis::new()
+	    dc: Some(dc::LinearDcAnalysis::new())
 	}
     }
 
@@ -35,8 +35,11 @@ impl LinearDcAnalysis {
 	self.dc.add_independent_voltage_source(term_pos, term_neg, current_edge, voltage);
     }
 
-    pub fn solve(self) -> (Vec<f64>, Vec<f64>) {
-	self.dc.solve()
+    pub fn solve(&mut self) -> (Vec<f64>, Vec<f64>) {
+	match self.dc {
+	    Some(dc) => dc.solve(),
+	    None => panic!("You have already solved!"),
+	}
     }
 }
 
