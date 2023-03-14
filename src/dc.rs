@@ -4,11 +4,11 @@ use crate::mna::Mna;
 use csuperlu::c::value_type::ValueType;
 use num;
 
-pub struct DcAnalysis<P: ValueType + num::Float> {
+pub struct LinearDcAnalysis<P: ValueType + num::Float> {
     mna: Mna<P>,
 }
 
-impl<P: ValueType + num::Float> DcAnalysis<P> {
+impl<P: ValueType + num::Float> LinearDcAnalysis<P> {
     pub fn new() -> Self {
 	Self {
 	    mna: Mna::new(),
