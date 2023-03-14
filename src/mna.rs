@@ -1,5 +1,3 @@
-use csuperlu::sparse_matrix::SparseMat;
-
 use crate::sparse::solve;
 
 use self::{mna_matrix::MnaMatrix, mna_rhs::MnaRhs};
@@ -20,15 +18,6 @@ impl Mna {
         }
     }
 
-    /// The number of non-ground voltage nodes
-    pub fn num_voltage_nodes(&self) -> usize {
-        self.matrix.num_voltage_nodes()
-    }
-
-    pub fn num_current_edges(&self) -> usize {
-        self.matrix.num_current_edges()
-    }
-    
     pub fn add_resistor(
 	&mut self,
 	term_1: usize,

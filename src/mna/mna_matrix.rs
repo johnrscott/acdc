@@ -135,6 +135,7 @@ impl MnaMatrix {
         }
     }
 
+    /*
     /// Same as symmetric version, but only adds values to the
     /// right-hand portion of the matrix (top and bottom)
     pub fn add_unsymmetric_right_group2(
@@ -160,7 +161,9 @@ impl MnaMatrix {
             plus_equals(&mut self.top_right, n2 - 1, e, x2);
         }
     }
+     */
 
+    /*
     /// Same as symmetric version, but only adds values to the
     /// bottom portion of the matrix (left and right)
     pub fn add_unsymmetric_bottom_group2(
@@ -186,7 +189,9 @@ impl MnaMatrix {
             plus_equals(&mut self.bottom_left, e, n2 - 1, x2);
         }
     }
+     */
 
+    /*
     /// Add a single value in the group2 (current-current, bottom-right) portion
     /// of the matrix
     pub fn add_group2_value(
@@ -199,4 +204,5 @@ impl MnaMatrix {
         self.update_num_current_edges(e2);
         plus_equals(&mut self.bottom_right, e1, e2, y);
     }
+     */
 }

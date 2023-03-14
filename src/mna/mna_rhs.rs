@@ -32,12 +32,14 @@ impl MnaRhs {
         out
     }
 
+    /*
     /// Add a RHS element in the group 1 matrix.
     pub fn add_rhs_group1(&mut self, n: usize, x: f64) {
 	if n != 0 {
             self.top.insert_unbounded(n - 1, 1, x);
 	}
     }
+     */
     
     /// Add a RHS element in the group 2 matrix
     pub fn add_rhs_group2(&mut self, e: usize, x: f64) {
