@@ -4,10 +4,10 @@
 //! csuperlu 
 //!
 
-use csuperlu::{sparse_matrix::SparseMat, dense::DenseMatrix, simple_driver::{SimpleSystem, SimpleSolution}, c::{stat::CSuperluStat, options::ColumnPermPolicy}};
+use csuperlu::{sparse_matrix::SparseMat, dense::DenseMatrix, simple_driver::{SimpleSystem, SimpleSolution}, c::{stat::CSuperluStat, options::ColumnPermPolicy, value_type::ValueType}};
 
 /// Assumes the matrix is square
-pub fn plus_equals(mat: &mut SparseMat<f64>, row: usize, col: usize, val: f64) {
+pub fn plus_equals<P: ValueType>(mat: &mut SparseMat<P>, row: usize, col: usize, val: P) {
     let old_val = mat.get_unbounded(row, col);
     mat.insert_unbounded(row, col, old_val + val);
 }
@@ -16,7 +16,7 @@ pub fn plus_equals(mat: &mut SparseMat<f64>, row: usize, col: usize, val: f64) {
 /// smaller matrix is assumed to have zero rows up to the size of the larger matrix. The
 /// matrices are concatenated with horizontal padding, which adds h_pad all-zero columns between
 /// a and b  
-pub fn concat_horizontal(mut a: SparseMat<f64>, b: &SparseMat<f64>) -> SparseMat<f64> {
+pub fn concat_horizontal<P: ValueType>(mut a: SparseMat<P>, b: &SparseMat<P>) -> SparseMat<P> {
     if a.num_rows() != b.num_rows() {
         panic!("Cannot concatenate matrices horizontally with different numbers of rows");
     }
@@ -28,7 +28,7 @@ pub fn concat_horizontal(mut a: SparseMat<f64>, b: &SparseMat<f64>) -> SparseMat
     a
 }
 
-pub fn concat_vertical(mut a: SparseMat<f64>, b: &SparseMat<f64>) -> SparseMat<f64> {
+pub fn concat_vertical<P: ValueType>(mut a: SparseMat<P>, b: &SparseMat<P>) -> SparseMat<P> {
     if a.num_cols() != b.num_cols() {
         panic!(
             "Cannot concatenate matrices vertically with different numbers of columns {} and {}",
@@ -44,7 +44,7 @@ pub fn concat_vertical(mut a: SparseMat<f64>, b: &SparseMat<f64>) -> SparseMat<f
     a
 }
 
-pub fn solve(a: SparseMat<f64>, b: Vec<f64>) -> Vec<f64> {
+pub fn solve<P: ValueType>(a: SparseMat<P>, b: Vec<P>) -> Vec<P> {
     if a.num_rows() != b.len() {
         panic!("Cannot solve system; incompatible dimensions");
     }

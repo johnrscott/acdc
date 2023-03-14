@@ -1,3 +1,7 @@
+use csuperlu::c::value_type::ValueType;
+
+use std::ops;
+
 use crate::sparse::solve;
 
 use self::{mna_matrix::MnaMatrix, mna_rhs::MnaRhs};
@@ -5,12 +9,12 @@ use self::{mna_matrix::MnaMatrix, mna_rhs::MnaRhs};
 mod mna_matrix;
 mod mna_rhs;
 
-pub struct Mna {
-    matrix: MnaMatrix,
-    rhs: MnaRhs,
+pub struct Mna<P: ValueType + ops::Neg<Output=P>> {
+    matrix: MnaMatrix<P>,
+    rhs: MnaRhs<P>,
 }
 
-impl Mna {
+impl<P: ValueType + ops::Neg<Output=P>> Mna<P> {
     pub fn new() -> Self {
         Self {
             matrix: MnaMatrix::new(),
@@ -23,16 +27,16 @@ impl Mna {
 	term_1: usize,
 	term_2: usize,
 	current_edge: Option<usize>,
-	resistance: f64,
+	resistance: P,
     ) {
 	let r = resistance;
         match current_edge {
             Some(e) => self
                 .matrix
-                .add_symmetric_group2(term_1, term_2, e, 1.0, -1.0, -r),
+                .add_symmetric_group2(term_1, term_2, e, P::one(), -P::one(), -r),
             None => self
                 .matrix
-                .add_symmetric_group1(term_1, term_2, 1.0 / r, -1.0 / r),
+                .add_symmetric_group1(term_1, term_2, P::one() / r, -P::one() / r),
         };
     }
 
@@ -41,16 +45,16 @@ impl Mna {
 	term_pos: usize,
 	term_neg: usize,
 	current_edge: usize,
-	voltage: f64,
+	voltage: P,
     ) {
 	let v = voltage;
         self.matrix.add_symmetric_group2(
             term_pos,
             term_neg,
             current_edge,
-            1.0,
-            -1.0,
-            0.0,
+            P::one(),
+            -P::one(),
+            P::zero(),
         );
         self.rhs.add_rhs_group2(current_edge, v);
     }
@@ -125,14 +129,18 @@ impl Mna {
      */
 
     /// Returns node voltages, edge currents
-    pub fn solve(self) -> (Vec<f64>, Vec<f64>) {
+    pub fn solve(self) -> (Vec<P>, Vec<P>) {
         let num_voltage_nodes = self.matrix.num_voltage_nodes();
         let num_current_edges = self.matrix.num_current_edges();
         let matrix = self.matrix.get_matrix();
-        let rhs = self.rhs.get_vector(num_voltage_nodes, num_current_edges);
+
+	matrix.print_structure(num_voltage_nodes);
+	
+	let rhs = self.rhs.get_vector(num_voltage_nodes, num_current_edges);
 
 	let mut solution = solve(matrix, rhs);
-	let currents: Vec<_> = solution.drain(num_voltage_nodes..)
+	let currents: Vec<_> = solution
+	    .drain(num_voltage_nodes..)
 	    .collect();
 	// Solution now contains the voltages
 	(solution, currents)

@@ -1,5 +1,5 @@
 use std::cmp;
-use csuperlu::{sparse_matrix::SparseMat, c::value_type::ValueType};
+use csuperlu::sparse_matrix::SparseMat;
 use crate::sparse::{plus_equals, concat_horizontal, concat_vertical};
 
 /// Matrix for modified nodal analysis
@@ -14,18 +14,18 @@ use crate::sparse::{plus_equals, concat_horizontal, concat_vertical};
 ///  |   - A2         Z22  |
 ///
 ///
-pub struct MnaMatrix<P: ValueType> {
+pub struct MnaMatrix {
     /// The number of rows in the top matrices
     num_voltage_nodes: usize,
     /// The number of rows in the bottom matrices
     num_current_edges: usize,
-    top_left: SparseMat<P>,
-    top_right: SparseMat<P>,
-    bottom_left: SparseMat<P>,
-    bottom_right: SparseMat<P>,
+    top_left: SparseMat<f64>,
+    top_right: SparseMat<f64>,
+    bottom_left: SparseMat<f64>,
+    bottom_right: SparseMat<f64>,
 }
 
-impl<P: ValueType> MnaMatrix<P> {
+impl MnaMatrix {
     pub fn new() -> Self {
         Self {
             num_voltage_nodes: 0,
@@ -37,7 +37,6 @@ impl<P: ValueType> MnaMatrix<P> {
         }
     }
 
-    /// Number of voltage nodes excluding ground
     pub fn num_voltage_nodes(&self) -> usize {
         self.num_voltage_nodes
     }
@@ -46,7 +45,7 @@ impl<P: ValueType> MnaMatrix<P> {
         self.num_current_edges
     }
 
-    pub fn get_matrix(mut self) -> SparseMat<P> {
+    pub fn get_matrix(mut self) -> SparseMat<f64> {
         self.top_left
             .resize(self.num_voltage_nodes, self.num_voltage_nodes);
         self.bottom_right
@@ -84,7 +83,7 @@ impl<P: ValueType> MnaMatrix<P> {
     /// be negative are not written.
     ///
     /// This matrix block is added to the current matrix in the top left of the MNA matrix.
-    pub fn add_symmetric_group1(&mut self, n1: usize, n2: usize, x1: P, x2: P) {
+    pub fn add_symmetric_group1(&mut self, n1: usize, n2: usize, x1: f64, x2: f64) {
         if n1 == n2 {
             panic!("Cannot set symmetric group 1 where n1 == n2");
         }
@@ -115,9 +114,9 @@ impl<P: ValueType> MnaMatrix<P> {
         n1: usize,
         n2: usize,
         e: usize,
-        x1: P,
-        x2: P,
-        y: P,
+        x1: f64,
+        x2: f64,
+        y: f64,
     ) {
         if n1 == n2 {
             panic!("Cannot set symmetric group 2 where n1 == n2");
