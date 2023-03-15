@@ -71,20 +71,45 @@ impl LinearAcAnalysis {
     
 }
 
-struct Impedance {
-    term_1: usize,
-    term_2: usize,
-    current_edge: Option<usize>,
-    /// Closure to calculate the impedance at
-    /// a particular frequency
-    impedance: Box<dyn ops::Fn(f64) -> Complex<f64>>,
+enum Impedance {
+    Resistor(f64),
+    Capacitor(f64),
+    Inductor(f64),
 }
 
-struct VoltageSource {
-    term_pos: usize,
-    term_neg: usize,
-    current_edge: usize,
-    voltage: f64,
+impl Impedance {
+    fn impedance(&self, freq_hz: f64) -> Complex<f64> {
+	match self {
+	    Impedance::Resistor(r) => Complex::new(*r, 0.0),
+	    Impedance::Capacitor(c) => {
+		let omega = 2.0 * PI * freq_hz;
+		let s = Complex::i() * omega;		
+		1.0 / (s * c)
+	    },
+	    Impedance::Inductor(l) => {
+		let omega = 2.0 * PI * freq_hz;
+		let s = Complex::i() * omega;		
+		s * l		
+	    }
+	}
+    }
+}
+
+enum Element {
+    Impedance {
+	term_1: usize,
+	term_2: usize,
+	current_edge: Option<usize>,
+	/// Closure to calculate the impedance at
+	/// a particular frequency
+	impedance: Impedance,
+    },
+    VoltageSource {
+	term_pos: usize,
+	term_neg: usize,
+	current_edge: usize,
+	voltage: f64,
+    },
 }
 
 struct LinearAcSweep {
@@ -92,8 +117,7 @@ struct LinearAcSweep {
     f_end: f64,
     num_steps: usize,
     f: Vec<f64>,
-    impedances: Vec<Impedance>,
-    voltage_sources: Vec<VoltageSource>,
+    elements: Vec<Element>,
 }
 
 impl LinearAcSweep {
@@ -105,8 +129,7 @@ impl LinearAcSweep {
 	    f: (0..num_steps)
 		.map(|n| f_start + (n as f64) / (f_end - f_start))
 		.collect(),
-	    impedances: Vec::new(),
-	    voltage_sources: Vec::new(),
+	    elements: Vec::new(),
 	}
     }
 
@@ -117,13 +140,13 @@ impl LinearAcSweep {
 	current_edge: Option<usize>,
 	resistance: f64,
     ) {
-	let element = Impedance {
+	let element = Element::Impedance {
 	    term_1,
 	    term_2,
 	    current_edge,
-	    impedance: Box::new(|_f| Complex::new(resistance, 0.0)),
+	    impedance: Impedance::Resistor(resistance),
 	};
-	self.impedances.push(element);
+	self.elements.push(element);
     }
 
     pub fn add_capacitor(
@@ -133,17 +156,13 @@ impl LinearAcSweep {
 	current_edge: Option<usize>,
 	capacitance: f64,
     ) {
-	let element = Impedance {
+	let element = Element::Impedance {
 	    term_1,
 	    term_2,
 	    current_edge,
-	    impedance: Box::new(|f| {
-		let omega = 2.0 * PI * f;
-		let s = Complex::i() * omega;
-		1.0 / (s * capacitance)
-	    })
+	    impedance: Impedance::Capacitor(capacitance),
 	};
-	self.impedances.push(element);
+	self.elements.push(element);
     }
 
     pub fn add_inductor(
@@ -153,17 +172,13 @@ impl LinearAcSweep {
 	current_edge: Option<usize>,
 	inductance: f64,
     ) {
-	let element = Impedance {
+	let element = Element::Impedance {
 	    term_1,
 	    term_2,
 	    current_edge,
-	    impedance: Box::new(|f| {
-		let omega = 2.0 * PI * f;
-		let s = Complex::i() * omega;
-		s * inductance
-	    })
+	    impedance: Impedance::Inductor(inductance),
 	};
-	self.impedances.push(element);
+	self.elements.push(element);
     }
     
     pub fn add_independent_voltage_source(
@@ -173,13 +188,13 @@ impl LinearAcSweep {
     	current_edge: usize,
     	voltage: f64,
     ) {
-	let source = VoltageSource {
+	let source = Element::VoltageSource {
 	    term_pos,
 	    term_neg,
 	    current_edge,
 	    voltage,
 	};
-	self.voltage_sources.push(source);
+	self.elements.push(source);
     }
 
     
