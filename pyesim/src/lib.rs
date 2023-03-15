@@ -22,7 +22,9 @@ impl LinearDcAnalysis {
 	resistance: f64,
 	current_edge: Option<usize>,
     ) {
-	self.dc.add_resistor(term_1, term_2, current_edge, resistance);
+	if let Some(ref mut dc) = self.dc {
+	    dc.add_resistor(term_1, term_2, current_edge, resistance)
+	}
     }
 
     pub fn add_independent_voltage_source(
@@ -32,13 +34,16 @@ impl LinearDcAnalysis {
 	voltage: f64,
 	current_edge: usize,
     ) {
-	self.dc.add_independent_voltage_source(term_pos, term_neg, current_edge, voltage);
+	if let Some(ref mut dc) = self.dc {
+	    dc.add_independent_voltage_source(term_pos, term_neg, current_edge, voltage)
+	}
     }
 
     pub fn solve(&mut self) -> (Vec<f64>, Vec<f64>) {
-	match self.dc {
+
+	match self.dc.take() {
 	    Some(dc) => dc.solve(),
-	    None => panic!("You have already solved!"),
+	    None => panic!("You already solved the system"),
 	}
     }
 }
