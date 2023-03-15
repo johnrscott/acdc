@@ -36,9 +36,21 @@ impl LinearAcAnalysis {
 	current_edge: Option<usize>,
 	capacitance: f64,
     ) {
-	let s = Complex::i() * 2.0 * PI * self.omega;
-	let r = 1.0 / (s * capacitance);
-	self.mna.add_resistor(term_1, term_2, current_edge, r);
+	let s = Complex::i() * self.omega;
+	let x = 1.0 / (s * capacitance);
+	self.mna.add_resistor(term_1, term_2, current_edge, x);
+    }
+
+    pub fn add_inductor(
+	&mut self,
+	term_1: usize,
+	term_2: usize,
+	current_edge: Option<usize>,
+	inductance: f64,
+    ) {
+	let s = Complex::i() * self.omega;
+	let x = s * inductance;
+	self.mna.add_resistor(term_1, term_2, current_edge, x);
     }
 
     
