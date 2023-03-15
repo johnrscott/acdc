@@ -112,7 +112,7 @@ enum Element {
     },
 }
 
-struct LinearAcSweep {
+pub struct LinearAcSweep {
     f_start: f64,
     f_end: f64,
     num_steps: usize,
@@ -197,5 +197,47 @@ impl LinearAcSweep {
 	self.elements.push(source);
     }
 
-    
+    pub fn solve(&self) -> (Vec<f64>, Vec<Vec<Complex<f64>>>, Vec<Vec<Complex<f64>>>) {
+
+	let mut voltages_with_frequency = Vec::new();
+	let mut currents_with_frequency = Vec::new();
+	
+	for freq_hz in self.f.iter() {
+
+	    // Make new modal analysis matrix
+	    let mut mna = Mna::new();
+
+	    // Add all the elements
+	    for elem in self.elements.iter() {
+		match elem {
+		    Element::Impedance {
+			term_1,
+			term_2,
+			current_edge,
+			impedance
+		    } => {
+			mna.add_resistor(*term_1, *term_2, *current_edge,
+					 impedance.impedance(*freq_hz));
+		    },
+		    Element::VoltageSource {
+			term_pos,
+			term_neg,
+			current_edge,
+			voltage
+		    } => {
+    			mna.add_independent_voltage_source(*term_pos, *term_neg, *current_edge,
+							   voltage.into());
+		    }
+		}
+	    }
+
+	    // Solve the system at this frequency
+	    let (voltages, currents) = mna.solve();
+
+	    voltages_with_frequency.push(voltages);
+	    currents_with_frequency.push(currents);
+	}
+
+	(self.f.to_vec(), voltages_with_frequency, currents_with_frequency)
+    }
 }
