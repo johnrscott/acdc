@@ -2,11 +2,13 @@ import pyesim as esim
 import matplotlib.pyplot as plt
 import numpy as np
 
-ac = esim.LinearAcSweep(0.1,1e6,10001)
+ac = esim.LinearAcSweep(1e3,6e7,10001)
 
-## Low pass filter
-ac.add_resistor(2, 1, 1e3)
-ac.add_capacitor(1, 0, 100e-9)
+## Notch filter
+ac.add_resistor(1, 0, 22)
+ac.add_capacitor(2, 1, 303e-12)
+ac.add_inductor(3, 1, 30e-6)
+ac.add_resistor(2, 3, 0.6)
 
 ## Source voltage
 ac.add_independent_voltage_source(2, 0, 5, 0)
