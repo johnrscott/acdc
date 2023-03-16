@@ -2,12 +2,6 @@ use libesim::{dc, ac};
 use pyo3::{prelude::*, types::PyComplex};
 use num::Complex;
 
-impl IntoPyObject for  {
-    fn into_object(self, py: Python) -> PyObject {
-        unimplemented!()
-    }
-}
-
 #[pyclass]
 struct LinearDcAnalysis {
     dc: Option<dc::LinearDcAnalysis<f64>>,
@@ -89,9 +83,23 @@ impl LinearAcSweep {
 	self.ac_sweep.add_independent_voltage_source(term_pos, term_neg, current_edge, voltage)
     }
 
-    pub fn solve(&mut self) -> (Vec<f64>, Vec<Vec<PyComplex>>, Vec<Vec<PyComplex>>) {
+    pub fn solve(&mut self) -> (Vec<f64>, Vec<Vec<f64>>, Vec<Vec<f64>>) {
 	let (freq, voltages_with_freq, currents_with_freq) = self.ac_sweep.solve();
-	(freq, voltages_with_freq.into(), currents_with_freq.into())
+
+	let mut magnitude = Vec::new();
+	let mut phase = Vec::new();
+	for vector in voltages_with_freq {
+	    let mut mag_vec = Vec::new();
+	    let mut phase_vec = Vec::new();
+	    for v in vector {
+		mag_vec.push(v.norm());
+		phase_vec.push(v.arg());
+	    }
+	    magnitude.push(mag_vec);
+	    phase.push(phase_vec);
+	}
+	
+	(freq, magnitude, phase)
     }
 }
 
