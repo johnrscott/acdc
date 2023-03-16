@@ -12,7 +12,7 @@ ac.add_capacitor(1, 0, 100e-9)
 ac.add_independent_voltage_source(2, 0, 5, 0)
 freq, magnitude, phase = ac.solve()
 
-m = np.array([item[0] for item in magnitude])
+m = np.array(magnitude[0]) / 5
 f = np.array(freq)
 
 plt.loglog(freq, m/5)

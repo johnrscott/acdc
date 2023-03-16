@@ -238,6 +238,37 @@ impl LinearAcSweep {
 	    currents_with_frequency.push(currents);
 	}
 
-	(self.f.to_vec(), voltages_with_frequency, currents_with_frequency)
+	
+	
+	// Convert to vectors of voltage with frequency at each node
+	let mut v = Vec::new();
+	let num_voltage_nodes = voltages_with_frequency[0].len();
+
+	// Loop over voltages
+	for n in 0..num_voltage_nodes {
+	    let mut v_at_one_frequency = Vec::new();
+	    // Loop over frequencies
+	    for m in 0..self.f.len() {
+		v_at_one_frequency.push(voltages_with_frequency[m][n])
+	    }
+	    v.push(v_at_one_frequency);
+	}
+	
+	let mut i = Vec::new();
+	let num_current_nodes = currents_with_frequency[0].len();
+
+	// Loop over currents
+	for n in 0..num_current_nodes {
+	    let mut i_at_one_frequency = Vec::new();
+	    // Loop over frequencies
+	    for m in 0..self.f.len() {
+		i_at_one_frequency.push(currents_with_frequency[m][n])
+	    }
+	    i.push(i_at_one_frequency);
+	}
+
+	
+	    
+	(self.f.to_vec(), v, i)
     }
 }
