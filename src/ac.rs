@@ -127,7 +127,7 @@ impl LinearAcSweep {
 	    f_end,
 	    num_steps,
 	    f: (0..num_steps)
-		.map(|n| f_start + (n as f64) / (f_end - f_start))
+		.map(|n| f_start + (n as f64) * (f_end - f_start) / num_steps as f64)
 		.collect(),
 	    elements: Vec::new(),
 	}

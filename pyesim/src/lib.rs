@@ -73,6 +73,27 @@ impl LinearAcSweep {
 	self.ac_sweep.add_resistor(term_1, term_2, current_edge, resistance)
     }
 
+
+    pub fn add_capacitor(
+	&mut self,
+	term_1: usize,
+	term_2: usize,
+	capacitor: f64,
+	current_edge: Option<usize>,
+    ) {
+	self.ac_sweep.add_capacitor(term_1, term_2, current_edge, capacitor)
+    }
+
+    pub fn add_inductor(
+	&mut self,
+	term_1: usize,
+	term_2: usize,
+	inductance: f64,
+	current_edge: Option<usize>,
+    ) {
+	self.ac_sweep.add_inductor(term_1, term_2, current_edge, inductance)
+    }
+
     pub fn add_independent_voltage_source(
 	&mut self,
 	term_pos: usize,
@@ -84,7 +105,7 @@ impl LinearAcSweep {
     }
 
     pub fn solve(&mut self) -> (Vec<f64>, Vec<Vec<f64>>, Vec<Vec<f64>>) {
-	let (freq, voltages_with_freq, currents_with_freq) = self.ac_sweep.solve();
+	let (freq, voltages_with_freq, ..) = self.ac_sweep.solve();
 
 	let mut magnitude = Vec::new();
 	let mut phase = Vec::new();
