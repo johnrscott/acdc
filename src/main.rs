@@ -1,21 +1,22 @@
-use crate::ac::{LinearAcAnalysis, LinearAcSweep};
+use dc::LinearDcAnalysis;
+
 
 mod mna;
 mod dc;
 mod ac;
 mod sparse;
+mod node_map;
 
 fn main() {
 
-    let mut ac_sweep = LinearAcSweep::new(1.0, 2.0, 3);
-    ac_sweep.add_capacitor(1, 0, None, 1e-9);
-    ac_sweep.add_inductor(1, 0, None, 10e-9);
-    ac_sweep.add_resistor(2, 1, None, 10.0);
-    ac_sweep.add_independent_voltage_source(2, 0, 0, 5.0);
+    let mut dc = LinearDcAnalysis::new();
 
-    let (freq, voltages_with_freq, currents_with_freq) = ac_sweep.solve();
-    
-    println!("{:?}", freq);
-    println!("{:?}", voltages_with_freq);
-    println!("{:?}", currents_with_freq);   
+    // Voltage divider
+    dc.add_resistor("vcc", "v_out", None, 4.7);
+    dc.add_resistor("v_out", "gnd", None, 4.7);
+    dc.add_independent_voltage_source("vcc", "gnd", "v1", 5.0);
+
+    let (voltages, currents) = dc.solve();
+    println!("Voltages: {:?}", voltages);
+    println!("Currents: {:?}", currents);
 }
