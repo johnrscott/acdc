@@ -15,14 +15,14 @@ impl<P: ValueType + num::Float> LinearDcAnalysis<P> {
 	}
     }
 
-    pub fn add_resistor(
+    pub fn add_impedance(
 	&mut self,
 	term_1: usize,
 	term_2: usize,
 	current_edge: Option<usize>,
-	resistance: P,
+	impedance: P,
     ) {
-	self.mna.add_resistor(term_1, term_2, current_edge, resistance);
+	self.mna.add_impedance(term_1, term_2, current_edge, impedance);
     }
 
     pub fn add_independent_voltage_source(

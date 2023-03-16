@@ -22,21 +22,21 @@ impl<P: ValueType + ops::Neg<Output=P>> Mna<P> {
         }
     }
 
-    pub fn add_resistor(
+    pub fn add_impedance(
 	&mut self,
 	term_1: usize,
 	term_2: usize,
 	current_edge: Option<usize>,
-	resistance: P,
+	impedance: P,
     ) {
-	let r = resistance;
+	let z = impedance;
         match current_edge {
             Some(e) => self
                 .matrix
-                .add_symmetric_group2(term_1, term_2, e, P::one(), -P::one(), -r),
+                .add_symmetric_group2(term_1, term_2, e, P::one(), -P::one(), -z),
             None => self
                 .matrix
-                .add_symmetric_group1(term_1, term_2, P::one() / r, -P::one() / r),
+                .add_symmetric_group1(term_1, term_2, P::one() / z, -P::one() / z),
         };
     }
 

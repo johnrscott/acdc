@@ -3,7 +3,6 @@
 use crate::mna::Mna;
 use num::Complex;
 use std::f64::consts::PI;
-use core::ops;
 
 pub struct LinearAcAnalysis {
     omega: f64,
@@ -27,7 +26,7 @@ impl LinearAcAnalysis {
 	resistance: f64,
     ) {
 	let r = Complex::new(resistance, 0.0);
-	self.mna.add_resistor(term_1, term_2, current_edge, r);
+	self.mna.add_impedance(term_1, term_2, current_edge, r);
     }
 
     pub fn add_capacitor(
@@ -39,7 +38,7 @@ impl LinearAcAnalysis {
     ) {
 	let s = Complex::i() * self.omega;
 	let x = 1.0 / (s * capacitance);
-	self.mna.add_resistor(term_1, term_2, current_edge, x);
+	self.mna.add_impedance(term_1, term_2, current_edge, x);
     }
 
     pub fn add_inductor(
@@ -51,7 +50,7 @@ impl LinearAcAnalysis {
     ) {
 	let s = Complex::i() * self.omega;
 	let x = s * inductance;
-	self.mna.add_resistor(term_1, term_2, current_edge, x);
+	self.mna.add_impedance(term_1, term_2, current_edge, x);
     }
     
     pub fn add_independent_voltage_source(
@@ -216,7 +215,7 @@ impl LinearAcSweep {
 			current_edge,
 			impedance
 		    } => {
-			mna.add_resistor(*term_1, *term_2, *current_edge,
+			mna.add_impedance(*term_1, *term_2, *current_edge,
 					 impedance.impedance(*freq_hz));
 		    },
 		    Element::VoltageSource {
