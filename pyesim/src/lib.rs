@@ -1,5 +1,12 @@
-use libesim::dc;
-use pyo3::prelude::*;
+use libesim::{dc, ac};
+use pyo3::{prelude::*, types::PyComplex};
+use num::Complex;
+
+impl IntoPyObject for  {
+    fn into_object(self, py: Python) -> PyObject {
+        unimplemented!()
+    }
+}
 
 #[pyclass]
 struct LinearDcAnalysis {
@@ -49,20 +56,16 @@ impl LinearDcAnalysis {
 }
 
 #[pyclass]
-struct LinearAcAnalysis {
-    f_start: f64,
-    f_stop: f64,
-    f_step: f64,
+struct LinearAcSweep {
+    ac_sweep: ac::LinearAcSweep,
 }
 
 #[pymethods]
-impl LinearAcAnalysis {
+impl LinearAcSweep {
     #[new]
-    fn new(f_start: f64, f_stop: f64, f_step: f64) -> Self {
+    fn new(f_start: f64, f_end: f64, num_steps: usize) -> Self {
         Self {
-	    f_start,
-	    f_stop,
-	    f_step,
+	    ac_sweep: ac::LinearAcSweep::new(f_start, f_end, num_steps),
 	}
     }
 
@@ -73,9 +76,7 @@ impl LinearAcAnalysis {
 	resistance: f64,
 	current_edge: Option<usize>,
     ) {
-	if let Some(ref mut dc) = self.dc {
-	    dc.add_resistor(term_1, term_2, current_edge, resistance)
-	}
+	self.ac_sweep.add_resistor(term_1, term_2, current_edge, resistance)
     }
 
     pub fn add_independent_voltage_source(
@@ -85,17 +86,12 @@ impl LinearAcAnalysis {
 	voltage: f64,
 	current_edge: usize,
     ) {
-	if let Some(ref mut dc) = self.dc {
-	    dc.add_independent_voltage_source(term_pos, term_neg, current_edge, voltage)
-	}
+	self.ac_sweep.add_independent_voltage_source(term_pos, term_neg, current_edge, voltage)
     }
 
-    pub fn solve(&mut self) -> (Vec<f64>, Vec<f64>) {
-
-	match self.dc.take() {
-	    Some(dc) => dc.solve(),
-	    None => panic!("You already solved the system"),
-	}
+    pub fn solve(&mut self) -> (Vec<f64>, Vec<Vec<PyComplex>>, Vec<Vec<PyComplex>>) {
+	let (freq, voltages_with_freq, currents_with_freq) = self.ac_sweep.solve();
+	(freq, voltages_with_freq.into(), currents_with_freq.into())
     }
 }
 
@@ -104,5 +100,6 @@ impl LinearAcAnalysis {
 #[pymodule]
 fn pyesim(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<LinearDcAnalysis>()?;
+    m.add_class::<LinearAcSweep>()?;
     Ok(())
 }
