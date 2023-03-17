@@ -1,8 +1,8 @@
-import pyesim as esim
+import pyacdc as esim
 import matplotlib.pyplot as plt
 import numpy as np
 
-ac = esim.LinearAcSweep(1e3,6e7,10001)
+ac = acdc.LinearAcSweep(1e3,6e7,10001)
 
 ## Notch filter
 ac.add_resistor(1, 0, 22)

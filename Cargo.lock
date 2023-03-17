@@ -97,6 +97,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "acdc"
+version = "0.1.0"
+dependencies = [
+ "csuperlu",
+ "num",
+ "regex",
+]
+
+[[package]]
 name = "adler"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -986,15 +995,6 @@ checksum = "64f18991e7bf11e7ffee451b5318b5c1a73c52d0d0ada6e5a3017c8c1ced6a21"
 dependencies = [
  "libc",
  "str-buf",
-]
-
-[[package]]
-name = "esim"
-version = "0.1.0"
-dependencies = [
- "csuperlu",
- "num",
- "regex",
 ]
 
 [[package]]
@@ -1937,10 +1937,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "pyesim"
+name = "pyacdc"
 version = "0.1.0"
 dependencies = [
- "esim",
+ "acdc",
  "num",
  "pyo3",
 ]
