@@ -1,5 +1,5 @@
 [workspace]
-members = ["pyesim"]
+members = ["pyesim", "gui"]
 
 [package]
 name = "esim"
