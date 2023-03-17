@@ -1,27 +1,22 @@
-use eframe::egui;
+use dc::LinearDcAnalysis;
+
+
+mod mna;
+mod dc;
+mod ac;
+mod sparse;
+mod node_map;
 
 fn main() {
-    let native_options = eframe::NativeOptions::default();
-    eframe::run_native("My egui App", native_options, Box::new(|cc| Box::new(MyEguiApp::new(cc))));
-}
 
-#[derive(Default)]
-struct MyEguiApp {}
+    let mut dc = LinearDcAnalysis::new();
 
-impl MyEguiApp {
-    fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        // Customize egui here with cc.egui_ctx.set_fonts and cc.egui_ctx.set_visuals.
-        // Restore app state using cc.storage (requires the "persistence" feature).
-        // Use the cc.gl (a glow::Context) to create graphics shaders and buffers that you can use
-        // for e.g. egui::PaintCallback.
-        Self::default()
-    }
-}
+    // Voltage divider
+    dc.add_resistor("vcc", "v_out", None, 4.7);
+    dc.add_resistor("v_out", "gnd", None, 4.7);
+    dc.add_independent_voltage_source("vcc", "gnd", "v1", 5.0);
 
-impl eframe::App for MyEguiApp {
-   fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-       egui::CentralPanel::default().show(ctx, |ui| {
-           ui.heading("Hello World!");
-       });
-   }
+    let (voltages, currents) = dc.solve();
+    println!("Voltages: {:?}", voltages);
+    println!("Currents: {:?}", currents);
 }
