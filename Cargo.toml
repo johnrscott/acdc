@@ -14,3 +14,4 @@ name = "libesim"
 csuperlu = { git = "https://github.com/lanamineh/csuperlu" }
 regex = "1"
 num = "0.4.0"
+eframe = "0.21.3"
