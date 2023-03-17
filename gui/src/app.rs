@@ -95,22 +95,17 @@ impl eframe::App for TemplateApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
 
-            ui.heading("eframe template");
-            ui.hyperlink("https://github.com/emilk/eframe_template");
-            ui.add(egui::github_link_file!(
-                "https://github.com/emilk/eframe_template/blob/master/",
-                "Source code."
-            ));
+            ui.heading("Linear AC/DC Analysis");
+            ui.hyperlink("https://github.com/johnrscott/acdc");
             egui::warn_if_debug_build(ui);
         });
 
-        if false {
-            egui::Window::new("Window").show(ctx, |ui| {
-                ui.label("Windows can be moved by dragging them.");
-                ui.label("They are automatically sized based on contents.");
-                ui.label("You can turn on resizing and scrolling if you like.");
-                ui.label("You would normally choose either panels OR windows.");
-            });
-        }
+        egui::Window::new("Window").show(ctx, |ui| {
+            ui.label("Windows can be moved by dragging them.");
+            ui.label("They are automatically sized based on contents.");
+            ui.label("You can turn on resizing and scrolling if you like.");
+            ui.label("You would normally choose either panels OR windows.");
+        });
+
     }
 }
