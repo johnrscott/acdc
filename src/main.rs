@@ -6,9 +6,9 @@ fn main() {
 }
 
 #[derive(Default)]
-struct MyEguiApp {}
+struct SchematicApp {}
 
-impl MyEguiApp {
+impl SchematicApp {
     fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // Customize egui here with cc.egui_ctx.set_fonts and cc.egui_ctx.set_visuals.
         // Restore app state using cc.storage (requires the "persistence" feature).
@@ -18,7 +18,7 @@ impl MyEguiApp {
     }
 }
 
-impl eframe::App for MyEguiApp {
+impl eframe::App for SchematicApp {
    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
        egui::CentralPanel::default().show(ctx, |ui| {
            ui.heading("Hello World!");
