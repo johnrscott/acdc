@@ -1,4 +1,4 @@
-use libesim::{dc, ac};
+use libacdc::{dc, ac};
 use pyo3::{prelude::*, types::PyComplex};
 use num::Complex;
 

@@ -1,4 +1,4 @@
-import pyacdc as esim
+import pyacdc as acdc
 
 dc = acdc.LinearDcAnalysis()
 dc.add_resistor(1, 0, 100)

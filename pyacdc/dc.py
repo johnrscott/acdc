@@ -1,6 +1,6 @@
-import pyesim as esim
+import pyacdc as acdc
 
-dc = esim.LinearDcAnalysis()
+dc = acdc.LinearDcAnalysis()
 dc.add_resistor(1, 0, 100)
 dc.add_resistor(2, 1, 100)
 dc.add_independent_voltage_source(2, 0, 5, 0)
