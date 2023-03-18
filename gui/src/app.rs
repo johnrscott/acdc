@@ -1,3 +1,6 @@
+use eframe::emath::RectTransform;
+use egui::{Sense, Pos2, Rect, vec2, Stroke, Color32};
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
@@ -52,60 +55,33 @@ impl eframe::App for TemplateApp {
         // Tip: a good default choice is to just keep the `CentralPanel`.
         // For inspiration and more examples, go to https://emilk.github.io/egui
 
-        #[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            // The top panel is often a good place for a menu bar:
-            egui::menu::bar(ui, |ui| {
-                ui.menu_button("File", |ui| {
-                    if ui.button("Quit").clicked() {
-                        _frame.close();
-                    }
-                });
-            });
+            ui.heading("AC/DC analysis of linear circuits")
         });
 
-        egui::SidePanel::left("side_panel").show(ctx, |ui| {
-            ui.heading("Side Panel");
-
-            ui.horizontal(|ui| {
-                ui.label("Write something: ");
-                ui.text_edit_singleline(label);
-            });
-
-            ui.add(egui::Slider::new(value, 0.0..=10.0).text("value"));
-            if ui.button("Increment").clicked() {
-                *value += 1.0;
-            }
-
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                ui.horizontal(|ui| {
-                    ui.spacing_mut().item_spacing.x = 0.0;
-                    ui.label("powered by ");
-                    ui.hyperlink_to("egui", "https://github.com/emilk/egui");
-                    ui.label(" and ");
-                    ui.hyperlink_to(
-                        "eframe",
-                        "https://github.com/emilk/egui/tree/master/crates/eframe",
-                    );
-                    ui.label(".");
-                });
-            });
-        });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            // The central panel the region left after adding TopPanel's and SidePanel's
+	    // set up the drawing canvas with normalized coordinates:
+            let (response, painter) =
+                ui.allocate_painter(ui.available_size_before_wrap(), Sense::drag());
 
-            ui.heading("Linear AC/DC Analysis");
-            ui.hyperlink("https://github.com/johnrscott/acdc");
-            egui::warn_if_debug_build(ui);
-        });
+	    // normalize painter coordinates to +-1 units in each direction with
+	    // [0,0] in the center:
+            let painter_proportions = response.rect.square_proportions();
+            let to_screen = RectTransform::from_to(
+                Rect::from_min_size(Pos2::ZERO - painter_proportions, 2. * painter_proportions),
+                response.rect,
+            );
 
-        egui::Window::new("Window").show(ctx, |ui| {
-            ui.label("Windows can be moved by dragging them.");
-            ui.label("They are automatically sized based on contents.");
-            ui.label("You can turn on resizing and scrolling if you like.");
-            ui.label("You would normally choose either panels OR windows.");
-        });
-
+	    let arrow_start = Pos2::new(0.0, 0.0);
+	    let arrow_direction = vec2(1.0, -1.0);
+	    let stroke_width = 1.;
+	    let color = Color32::WHITE;
+	    painter.arrow(
+                to_screen * arrow_start,
+                to_screen.scale() * arrow_direction,
+                Stroke::new(stroke_width, color),
+            );
+	});
     }
 }
