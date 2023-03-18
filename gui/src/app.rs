@@ -143,6 +143,7 @@ struct Resistor {
     /// Length of segment at each end of resistor
     d: f32,
     rotation: f32,
+    term_1_select: bool, 
 }
 
 impl Resistor {
@@ -153,6 +154,7 @@ impl Resistor {
 	    x: 8.0,
 	    d: 15.0,
 	    rotation: 0.0,
+	    term_1_select: false,
 	}
     }
 
@@ -210,21 +212,41 @@ impl Resistor {
 		self.rotate()
 	    }
 	}
-
+	
 	// Draw the resistor
 	let stroke = ui.style().interact(&main_response).fg_stroke;
 	self.draw(&painter, stroke);
 
 	// Draw terminal 1 circle
 	let term_1_response = ui.interact(self.term_bounding_box(Term::Term1),
-					  resistor_id.with(1), Sense::drag());
+					  resistor_id.with(1), Sense::click());
 	let stroke = ui.style().interact(&term_1_response).fg_stroke;
 	let term_1 = Shape::circle_stroke(self.term_location(Term::Term1), 5.0, stroke);
 	painter.add(term_1);
 
+	// If terminal clicked, begin line
+	if term_1_response.clicked() {
+	    self.term_1_select = true
+	}
+
+	// If escape is pressed, end line
+	if ui.input(|i| i.key_pressed(egui::Key::Escape )) {
+	    self.term_1_select = false
+	}
+
+	if self.term_1_select {
+	    if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
+		// Draw line from term 1 to current position
+		let stroke = ui.style().noninteractive().fg_stroke;
+		let new_edge = Shape::line(vec![self.term_location(Term::Term1), pos], stroke);
+		painter.add(new_edge);
+	    }
+	}
+
+	    
 	// Draw terminal 2 circle
 	let term_2_response = ui.interact(self.term_bounding_box(Term::Term2),
-					  resistor_id.with(2), Sense::drag());
+					  resistor_id.with(2), Sense::click());
 	let stroke = ui.style().interact(&term_2_response).fg_stroke;
 	let term_2 = Shape::circle_stroke(self.term_location(Term::Term2), 5.0, stroke);
 	painter.add(term_2);
