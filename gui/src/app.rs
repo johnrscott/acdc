@@ -1,5 +1,6 @@
 use eframe::emath::RectTransform;
-use egui::{Sense, Pos2, Rect, vec2, Stroke, Color32, Painter, Vec2, pos2};
+use egui::{Sense, Pos2, Rect, vec2, Stroke, Color32, Painter, Vec2, pos2, Ui, Id, Shape};
+
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 pub struct SchematicApp {
@@ -90,26 +91,17 @@ impl eframe::App for SchematicApp {
                 response.rect,
             );
 
-            let color = if ui.visuals().dark_mode {
-		Color32::WHITE
-            } else {
-		Color32::BLACK
-            };
-	    
 	    for (i, r) in self.resistors.iter_mut().enumerate() {
-		let size = Vec2::splat(2.0 * 8.0);
-		let resistor_position = r.location();
-		let resistor_rect = Rect::from_center_size(resistor_position, size);
-
 		let resistor_id = response.id.with(i);
-                let resistor_response = ui.interact(resistor_rect, resistor_id, Sense::drag());
-
-		r.set_location(resistor_position + resistor_response.drag_delta());
-		
-		r.draw(&painter);
+		r.update(ui, &painter, resistor_id)
 	    }
 	});
     }
+}
+
+enum Orientation {
+    Vertical,
+    Horizontal,
 }
 
 /// Resistor symbol
@@ -124,9 +116,7 @@ struct Resistor {
     x: f32,
     /// Length of segment at each end of resistor
     d: f32,
-    /// The line color and width
-    stroke: Stroke,
-    selected: bool,
+    orientation: Orientation,
 }
 
 impl Resistor {
@@ -134,13 +124,9 @@ impl Resistor {
     fn new() -> Self {	
 	Self {
 	    origin: pos2(256.0, 256.0),
-	    x: 5.0,
-	    d: 10.0,
-	    stroke: Stroke {
-		width: 2.0,
-		color: Color32::WHITE,
-	    },
-	    selected: false,
+	    x: 8.0,
+	    d: 15.0,
+	    orientation: Orientation::Vertical,
 	}
     }
 
@@ -151,33 +137,121 @@ impl Resistor {
     fn set_location(&mut self, new_location: Pos2) {
 	self.origin = new_location;
     }
+
+    fn rotate(&mut self) {
+	match self.orientation {
+	    Orientation::Horizontal => self.orientation = Orientation::Vertical,
+	    Orientation::Vertical => self.orientation = Orientation::Horizontal,
+	}
+    }
+
+    fn central_bounding_box(&self) -> Rect {
+	let y = self.x * f32::sqrt(3.0) / 2.0;
+	match self.orientation {
+	    Orientation::Horizontal => {
+		Rect::from_center_size(self.origin, vec2(6.0 * self.x, y))
+	    }
+	    Orientation::Vertical => {
+		Rect::from_center_size(self.origin, vec2(y, 6.0 * self.x))		
+	    }
+	}
+    }
+
+    fn term_location(&self, side: f32) -> Pos2 {
+	match self.orientation {
+	    Orientation::Horizontal => self.origin + side * vec2(3.0 * self.x + self.d, 0.0),
+	    Orientation::Vertical => self.origin + side * vec2( 0.0, 3.0 * self.x + self.d),
+	}
+    }
+    
+    /// side = +-1.0 depending on which terminal is required
+    fn term_bounding_box(&self, side: f32) -> Rect {
+	Rect::from_center_size(self.term_location(side), Vec2::splat(5.0))
+    }
+    
+    fn update(&mut self, ui: &mut Ui, painter: &Painter, resistor_id: Id) {
+
+	// Detect a drag of the main component
+        let main_response = ui.interact(self.central_bounding_box(),
+					resistor_id, Sense::drag());
+	self.set_location(self.origin + main_response.drag_delta());
+
+	// Check for rotations while the resistor is in focus
+	if main_response.hovered() {
+	    if ui.input(|i| i.key_pressed(egui::Key::R)) {
+		self.rotate()
+	    }
+	}
+
+	// Draw the resistor
+	let stroke = ui.style().interact(&main_response).fg_stroke;
+	self.draw(&painter, stroke);
+
+	// Draw terminal 1 circle
+	let term_1_response = ui.interact(self.term_bounding_box(1.0),
+					  resistor_id.with(1), Sense::drag());
+	let stroke = ui.style().interact(&term_1_response).fg_stroke;
+	let term_1 = Shape::circle_stroke(self.term_location(1.0), 5.0, stroke);
+	painter.add(term_1);
+
+	// Draw terminal 2 circle
+	let term_2_response = ui.interact(self.term_bounding_box(-1.0),
+					  resistor_id.with(2), Sense::drag());
+	let stroke = ui.style().interact(&term_2_response).fg_stroke;
+	let term_2 = Shape::circle_stroke(self.term_location(-1.0), 5.0, stroke);
+	painter.add(term_2);
+
+	
+	// This stroke depends on whether the mouse is hovering over the
+	// region or not
+    }
     
     /// Draw either the right (reflect == 1.0) or the right
     /// (reflect == -1.0) portion of the symbol
-    fn draw_half(&self, reflect: f32, painter: &Painter) {
+    fn draw_half(&self, reflect: f32, painter: &Painter, stroke: Stroke) {
 	let half_x = reflect * self.x/2.0;
 	let y = - reflect * self.x * f32::sqrt(3.0) / 2.0;
-	let start = self.origin;
-	let end = self.origin + vec2(half_x, -y);
-	painter.line_segment([start, end], self.stroke);
-	let start = end;
-	let end = end + vec2(2.0 * half_x, 2.0 * y);
-	painter.line_segment([start, end], self.stroke);
-	let start = end;
-	let end = end + vec2(2.0 * half_x, - 2.0 * y);
-	painter.line_segment([start, end], self.stroke);
-	let start = end;
-	let end = end + vec2(half_x, y);
-	painter.line_segment([start, end], self.stroke);
-	let start = end;
-	let end = end + vec2(reflect * self.d, 0.0);
-	painter.line_segment([start, end], self.stroke);
-	
+	match self.orientation {
+	    Orientation::Horizontal => {
+		let start = self.origin;
+		let end = self.origin + vec2(half_x, -y);
+		painter.line_segment([start, end], stroke);
+		let start = end;
+		let end = end + vec2(2.0 * half_x, 2.0 * y);
+		painter.line_segment([start, end], stroke);
+		let start = end;
+		let end = end + vec2(2.0 * half_x, - 2.0 * y);
+		painter.line_segment([start, end], stroke);
+		let start = end;
+		let end = end + vec2(half_x, y);
+		painter.line_segment([start, end], stroke);
+		let start = end;
+		let end = end + vec2(reflect * self.d, 0.0);
+		painter.line_segment([start, end], stroke);	
+	    },
+	    Orientation::Vertical => {
+		let start = self.origin;
+		let end = self.origin + vec2(-y, half_x);
+		painter.line_segment([start, end], stroke);
+		let start = end;
+		let end = end + vec2(2.0 * y, 2.0 * half_x);
+		painter.line_segment([start, end], stroke);
+		let start = end;
+		let end = end + vec2(- 2.0 * y, 2.0 * half_x);
+		painter.line_segment([start, end], stroke);
+		let start = end;
+		let end = end + vec2(y, half_x);
+		painter.line_segment([start, end], stroke);
+		let start = end;
+		let end = end + vec2(0.0, reflect * self.d);
+		painter.line_segment([start, end], stroke);		
+	    }
+	}
     }
     
-    fn draw(&self, painter: &Painter) {
-	self.draw_half(1.0, painter);
-	self.draw_half(-1.0, painter);
+    fn draw(&self, painter: &Painter, stroke: Stroke) {
+	self.draw_half(1.0, painter, stroke);
+	self.draw_half(-1.0, painter, stroke);
 
     }
 }
