@@ -5,12 +5,17 @@ use egui::{Sense, Pos2, Rect, vec2, Stroke, Color32, Painter, Vec2, pos2, Ui, Id
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 pub struct SchematicApp {
     resistors: Vec<Resistor>,
+    // An item in this vector means a link between two resistors.
+    // The two usizes are the indices of the resistors, and the f32 are +-1
+    // depending which terminal are joined
+    edges: Vec<(usize, f32, usize, f32)>,
 }
 
 impl Default for SchematicApp {
     fn default() -> Self {
         Self {
 	    resistors: Vec::new(),
+	    edges: Vec::new(),
 	}
     }
 }
@@ -39,7 +44,7 @@ impl eframe::App for SchematicApp {
 
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let Self { resistors, } = self;
+        let Self { resistors, edges, } = self;
 
         // Examples of how to create different panels and windows.
         // Pick whichever suits you.
@@ -59,10 +64,15 @@ impl eframe::App for SchematicApp {
             });
 
             //ui.add(egui::Slider::new(value, 0.0..=10.0).text("value"));
-            if ui.button("Increment").clicked() {
+            if ui.button("Add resistor").clicked() {
 		self.resistors.push(Resistor::new());
             }
 
+            if ui.button("Add edge").clicked() {
+		self.edges.push((1, 1.0, 0, 1.0));
+            }
+
+	    
             ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                 ui.horizontal(|ui| {
                     ui.spacing_mut().item_spacing.x = 0.0;
@@ -91,10 +101,24 @@ impl eframe::App for SchematicApp {
                 response.rect,
             );
 
+	    // Draw resistors
 	    for (i, r) in self.resistors.iter_mut().enumerate() {
 		let resistor_id = response.id.with(i);
 		r.update(ui, &painter, resistor_id)
 	    }
+
+	    // Draw edges
+	    let stroke = ui.style().noninteractive().fg_stroke;
+	    for edge in self.edges.iter() {
+		let (resistor_1, term_1, resistor_2, term_2) = edge;
+		let start = self.resistors[*resistor_1].term_location(*term_1);
+		let end = self.resistors[*resistor_2].term_location(*term_2);
+		let edge_line = Shape::line(vec![start, end], stroke);
+		painter.add(edge_line);
+		
+	    }
+
+	    
 	});
     }
 }
